@@ -123,12 +123,12 @@ private:
   std::unique_ptr<NLOPT_IK::NLOPT_IK> nl_solver;
   std::unique_ptr<ChainIkSolverPos_TL> iksolver;
 
-  std::chrono::steady_clock::time_point start_time;
+  std::chrono::steady_clock::time_point deadline;
 
   template<typename T1, typename T2>
   bool runSolver(T1& solver, T2& other_solver,
                  const Eigen::VectorXd &q_init,
-                 const pinocchio::SE3 &p_in);
+                 const pinocchio::SE3 &p_in, unsigned index);
 
   bool runPinocchioIK(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in);
   bool runNLOPT(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in);
@@ -150,6 +150,7 @@ private:
   unsigned completed_workers = 0;
   bool shutdown = false;
   Eigen::VectorXd task_seed;
+  std::array<Eigen::VectorXd, 2> worker_seed, worker_output, speed_slots;
   pinocchio::SE3 task_pose;
   std::array<std::exception_ptr, 2> worker_errors;
   pinocchio::Motion bounds;
@@ -195,12 +196,12 @@ private:
 
 inline bool PIN_IK::runPinocchioIK(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in)
 {
-  return runSolver(*iksolver.get(), *nl_solver.get(), q_init, p_in);
+  return runSolver(*iksolver.get(), *nl_solver.get(), q_init, p_in, 0);
 }
 
 inline bool PIN_IK::runNLOPT(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in)
 {
-  return runSolver(*nl_solver.get(), *iksolver.get(), q_init, p_in);
+  return runSolver(*nl_solver.get(), *iksolver.get(), q_init, p_in, 1);
 }
 
 }

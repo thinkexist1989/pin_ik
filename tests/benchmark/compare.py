@@ -56,8 +56,9 @@ def main():
             record = dict(group=group, robot=robot, scenario=scenario, mode=mode, solver=label,
                           samples=samples, timeout_seconds=timeout, period_us=period,
                           success=len(successful), mean_us=statistics.mean(times), max_us=max(times),
-                          p50_us=percentile(times, 50), p99_us=percentile(times, 99),
+                          p50_us=percentile(times, 50), p95_us=percentile(times, 95), p99_us=percentile(times, 99),
                           p999_us=percentile(times, 99.9), over_1ms=sum(t > 1000 for t in times),
+                          over_budget=sum(t > timeout * 1e6 for t in times),
                           max_position_error=max((float(row["position_error"]) for row in successful), default=0),
                           max_rotation_error=max((float(row["rotation_error"]) for row in successful), default=0),
                           release_deadline_misses=sum(float(row["release_to_finish_us"]) > 1000 for row in rows))

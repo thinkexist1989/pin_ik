@@ -1,0 +1,16 @@
+Synthetic background: six CPU-bound Python processes, SCHED_OTHER, inherited affinity
+performance_cartesian_smooth_mode0_stage_b samples=20000 success=19999 invalid=0 mean_us=17.8206 max_us=2212.36 over_1ms=5 max_position_error=9.91481e-07 max_rotation_error=9.96486e-07
+performance_cartesian_smooth_mode0_stage_a samples=20000 success=19999 invalid=0 mean_us=21.4126 max_us=3019.38 over_1ms=10 max_position_error=9.95786e-07 max_rotation_error=9.98088e-07
+  paired stage_b vs stage_a: both_solved=19998 max_joint_difference=8.48929054e-07
+performance_cartesian_exact_mode0_stage_b samples=20000 success=20000 invalid=0 mean_us=10.9337 max_us=645.629 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_cartesian_exact_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=15.2928 max_us=671.391 over_1ms=0 max_position_error=0 max_rotation_error=0
+  paired stage_b vs stage_a: both_solved=20000 max_joint_difference=0
+performance_arm6_smooth_mode0_stage_b samples=20000 success=20000 invalid=0 mean_us=18.1902 max_us=375.237 over_1ms=0 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+performance_arm6_smooth_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=21.8433 max_us=2541.87 over_1ms=1 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+  paired stage_b vs stage_a: both_solved=20000 max_joint_difference=0.019871906
+performance_arm6_exact_mode0_stage_b samples=20000 success=20000 invalid=0 mean_us=11.7257 max_us=759.237 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_arm6_exact_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=11.6909 max_us=237.884 over_1ms=0 max_position_error=0 max_rotation_error=0
+  paired stage_b vs stage_a: both_solved=20000 max_joint_difference=0
+periodic_arm6_smooth_mode0_stage_b samples=10000 success=9999 invalid=0 mean_us=52.1446 max_us=2288.17 over_1ms=1 max_position_error=9.99774e-07 max_rotation_error=6.7303e-07
+periodic_arm6_smooth_mode0_stage_a samples=10000 success=10000 invalid=0 mean_us=57.3969 max_us=620.678 over_1ms=0 max_position_error=9.99774e-07 max_rotation_error=6.7303e-07
+  paired stage_b vs stage_a: both_solved=9999 max_joint_difference=0.019871906

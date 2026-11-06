@@ -90,10 +90,11 @@ inline std::vector<BasicJointType> jointTypes(const Model& model) {
   return result;
 }
 
-inline Eigen::VectorXd toPinocchioConfiguration(const Model& model, const Eigen::VectorXd& angles) {
+inline void toPinocchioConfiguration(const Model& model, const Eigen::VectorXd& angles,
+                                    Eigen::VectorXd& q) {
   if (angles.size() != model.nv || !angles.allFinite())
     throw std::invalid_argument("Expected finite joint values of size model.nv");
-  Eigen::VectorXd q(model.nq);
+  q.resize(model.nq);
   for (JointIndex i = 1; i < model.joints.size(); ++i) {
     const auto& j = model.joints[i];
     if (j.nv() != 1 || (j.nq() != 1 && j.nq() != 2))
@@ -104,6 +105,11 @@ inline Eigen::VectorXd toPinocchioConfiguration(const Model& model, const Eigen:
       q[j.idx_q() + 1] = std::sin(angle);
     } else q[j.idx_q()] = angle;
   }
+}
+
+inline Eigen::VectorXd toPinocchioConfiguration(const Model& model, const Eigen::VectorXd& angles) {
+  Eigen::VectorXd q(model.nq);
+  toPinocchioConfiguration(model, angles, q);
   return q;
 }
 

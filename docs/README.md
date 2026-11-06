@@ -19,6 +19,7 @@
 
 - [1000 Hz 逆运动学优化方案](REALTIME_IK_OPTIMIZATION_PLAN.md)：已批准，涵盖常驻双线程、任务同步、时间预算、计算优化和验收标准。
 - [阶段 A 实现与验证报告](REALTIME_IK_STAGE_A_VALIDATION.md)：常驻线程实现、KDL TRAC-IK 解正确性对比、平均和最大耗时及周期测试结果。
+- [阶段 B 实现与验证报告](REALTIME_IK_STAGE_B_VALIDATION.md)：绝对截止时间、取消正确性、工作区与运动学复用，以及与阶段 A 和 KDL TRAC-IK 的回归对比。
 
 ## 连续旋转关节
 

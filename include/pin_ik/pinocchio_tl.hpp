@@ -37,6 +37,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdio>
 #include <iostream>
 #include <memory>
+#include <Eigen/QR>
 
 namespace PIN_IK
 {
@@ -67,6 +68,13 @@ public:
   }
 
 private:
+  int CartToJntUntil(const Eigen::VectorXd& q_init, const pinocchio::SE3& p_in,
+                    Eigen::VectorXd& q_out, const pinocchio::Motion& bounds,
+                    std::chrono::steady_clock::time_point deadline);
+#ifdef PIN_IK_TESTING
+  friend struct SolverTestAccess;
+  static void (*test_hook)(ChainIkSolverPos_TL&, const char*);
+#endif
   const pinocchio::Model model;
   std::unique_ptr<pinocchio::Data> data;
   pinocchio::FrameIndex tip_frame_id;
@@ -76,6 +84,10 @@ private:
   pinocchio::Motion bounds;
 
   Eigen::VectorXd delta_q;
+  Eigen::VectorXd configuration, q_curr, diff_q;
+  pinocchio::Data::Matrix6x jacobian;
+  Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> decomposition;
+  bool tip_covers_model;
   double maxtime;
   double eps;
 

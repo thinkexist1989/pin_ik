@@ -29,6 +29,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 ********************************************************************************/
 
 #include <pin_ik/pin_ik.hpp>
+#include <pin_ik/solve_deadline.hpp>
 #include <Eigen/Geometry>
 #include <chrono>
 #include <atomic>
@@ -113,6 +114,13 @@ void (*PIN_IK::test_hook)(PIN_IK&, const char*, unsigned) = nullptr;
 void PIN_IK::startWorkers()
 {
   task_seed.resize(model.nv);
+  for (unsigned i = 0; i < 2; ++i) {
+    worker_seed[i].resize(model.nv);
+    worker_output[i].resize(model.nv);
+    speed_slots[i].resize(model.nv);
+  }
+  solutions.reserve(2);
+  errors.reserve(2);
   try
   {
 #ifdef PIN_IK_TESTING
@@ -178,12 +186,12 @@ void PIN_IK::workerLoop(unsigned index)
       iksolver->abort();
       nl_solver->abort();
     }
-    if (index == 0) iksolver->setMaxtime(maxtime);
-    else nl_solver->setMaxtime(maxtime);
-
     lock.lock();
     worker_errors[index] = error;
     ++completed_workers;
+#ifdef PIN_IK_TESTING
+    if (test_hook) test_hook(*this, "completed", index);
+#endif
     state_cv.notify_one();
     // No task/solver access after completion until the next generation is acquired.
   }
@@ -220,24 +228,17 @@ inline void normalizeAngle(double& val, const double& target)
 template<typename T1, typename T2>
 bool PIN_IK::runSolver(T1& solver, T2& other_solver,
                         const Eigen::VectorXd &q_init,
-                        const pinocchio::SE3 &p_in)
+                        const pinocchio::SE3 &p_in, unsigned index)
 {
-  Eigen::VectorXd q_out;
-
-  double fulltime = maxtime;
-  Eigen::VectorXd seed = q_init;
+  auto& q_out = worker_output[index];
+  auto& seed = worker_seed[index];
+  seed = q_init;
 
   while (!solver.aborted)
   {
-    auto timediff = std::chrono::steady_clock::now() - start_time;
-    auto time_left = fulltime - std::chrono::duration<double>(timediff).count();
-
-    if (time_left <= 0)
+    if (std::chrono::steady_clock::now() >= deadline)
       break;
-
-    solver.setMaxtime(time_left);
-
-    int RC = solver.CartToJnt(seed, p_in, q_out, bounds);
+    int RC = solver.CartToJntUntil(seed, p_in, q_out, bounds, deadline);
     if (RC >= 0)
     {
       switch (solvetype)
@@ -257,7 +258,14 @@ bool PIN_IK::runSolver(T1& solver, T2& other_solver,
 #endif
       if (unique_solution(q_out))
       {
-        solutions.push_back(q_out);
+        if (solvetype == Speed) {
+          auto& slot = speed_slots[solutions.size()];
+          slot = q_out;
+          solutions.emplace_back();
+          solutions.back().swap(slot);
+        } else {
+          solutions.push_back(q_out);
+        }
         uint curr_size = solutions.size();
         errors.resize(curr_size);
         double err, penalty, manip_value;
@@ -291,16 +299,17 @@ bool PIN_IK::runSolver(T1& solver, T2& other_solver,
       if (!solutions.empty() && solvetype == Speed) break;
     }
 
-    if (solver.aborted) break;
+    if (solver.aborted || std::chrono::steady_clock::now() >= deadline) break;
     for (int j = 0; j < seed.size(); j++)
       if (types[j] == Continuous)
         seed(j) = fRand(q_init(j) - 2 * M_PI, q_init(j) + 2 * M_PI);
       else
         seed(j) = fRand(lb(j), ub(j));
   }
+#ifdef PIN_IK_TESTING
+  if (test_hook) test_hook(*this, "before_cancel", index);
+#endif
   other_solver.abort();
-
-  solver.setMaxtime(fulltime);
 
   return true;
 }
@@ -408,6 +417,7 @@ Eigen::VectorXd PIN_IK::computeSingularValues(const Eigen::VectorXd& arr)
 int PIN_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,
                        Eigen::VectorXd &q_out, const pinocchio::Motion& _bounds)
 {
+  const auto entry_time = std::chrono::steady_clock::now();
   if (q_init.size() != model.nv || !q_init.allFinite()) return -1;
 
   if (!initialized)
@@ -416,11 +426,14 @@ int PIN_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,
     return -1;
   }
 
-  start_time = std::chrono::steady_clock::now();
+  deadline = detail::deadlineAfter(entry_time, maxtime);
 
   nl_solver->reset();
   iksolver->reset();
 
+  // Recover the two Speed slots before clear() destroys their dynamic storage.
+  for (unsigned i = 0; i < 2 && i < solutions.size(); ++i)
+    if (speed_slots[i].size() == 0) speed_slots[i].swap(solutions[i]);
   solutions.clear();
   errors.clear();
 
@@ -431,6 +444,9 @@ int PIN_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,
     task_pose = p_in;
     worker_errors = {};
     completed_workers = 0;
+#ifdef PIN_IK_TESTING
+    if (test_hook) test_hook(*this, "before_dispatch", 0);
+#endif
     ++generation;
     lock.unlock();
     work_cv.notify_all();

@@ -103,3 +103,40 @@ ASAN_OPTIONS=detect_leaks=1 UBSAN_OPTIONS=halt_on_error=1 \
 ```
 
 本机预编译 Pinocchio 3.9.0 使用 Eigen 的 16 字节对齐 malloc 约定；GCC ASan 默认会改变 Eigen 对 malloc 的判断。这里显式匹配 `EIGEN_MALLOC_ALREADY_ALIGNED=1`，避免跨库分配与释放使用不同约定。该设置只适用于本机依赖及编译配置；更换依赖或启用更宽的向量对齐时，应统一重建依赖并核对分配约定。
+
+## 阶段 B 复现
+
+阶段 B 采用同一份 `ik_benchmark.cpp` 和 `compare.py`。将当前源码构建到 `/tmp/pin-ik-stage-b/release`；阶段 A 必须使用 `c085321` 归档的头文件和对应库，避免类布局不一致。已有阶段 A 的已验证二进制可直接使用。
+
+```bash
+mkdir -p /tmp/pin-ik-stage-b/stage-a-source
+git archive c085321 | tar -x -C /tmp/pin-ik-stage-b/stage-a-source
+cmake -S /tmp/pin-ik-stage-b/stage-a-source -B /tmp/pin-ik-stage-b/stage-a-build -DCMAKE_BUILD_TYPE=Release -Dpinocchio_DIR=/usr/local/lib/cmake/pinocchio
+cmake --build /tmp/pin-ik-stage-b/stage-a-build -j2
+cmake -S . -B /tmp/pin-ik-stage-b/release -DCMAKE_BUILD_TYPE=Release -Dpinocchio_DIR=/usr/local/lib/cmake/pinocchio
+cmake --build /tmp/pin-ik-stage-b/release -j2
+ctest --test-dir /tmp/pin-ik-stage-b/release -V
+
+cmake -S tests/benchmark -B /tmp/pin-ik-stage-b/bench-b -DCMAKE_BUILD_TYPE=Release -DIK_SOURCE_DIR="$PWD" -DIK_BUILD_DIR=/tmp/pin-ik-stage-b/release -Dpinocchio_DIR=/usr/local/lib/cmake/pinocchio
+cmake --build /tmp/pin-ik-stage-b/bench-b -j2
+cmake -S tests/benchmark -B /tmp/pin-ik-stage-b/bench-a -DCMAKE_BUILD_TYPE=Release -DIK_SOURCE_DIR=/tmp/pin-ik-stage-b/stage-a-source -DIK_BUILD_DIR=/tmp/pin-ik-stage-b/stage-a-build -Dpinocchio_DIR=/usr/local/lib/cmake/pinocchio
+cmake --build /tmp/pin-ik-stage-b/bench-a -j2
+python3 tests/benchmark/compare.py --suite correctness \
+  --solver stage_b=/tmp/pin-ik-stage-b/bench-b/ik_benchmark \
+  --solver stage_a=/tmp/pin-ik-stage-b/bench-a/ik_benchmark \
+  --solver kdl=/tmp/pin-ik-stage-a/bench-kdl/ik_benchmark \
+  --output /tmp/pin-ik-stage-b/correctness
+```
+
+KDL 构建仍按前文进行。将 `--suite` 改为 `performance` 或 `periodic`、使用独立输出目录即可复现耗时测试；重复轮次也保留独立目录。Sanitizer 构建沿用前文配置，目录改为 `stage-b`，同时构建并运行 `solver_tests` / `solver_deadlines`。
+
+Linux/glibc 下的分配诊断：
+
+```bash
+LD_PRELOAD=/tmp/pin-ik-stage-b/bench-b/liballocation_counter.so \
+  /tmp/pin-ik-stage-b/bench-b/allocation_probe tests/robot.urdf
+LD_PRELOAD=/tmp/pin-ik-stage-b/bench-a/liballocation_counter.so \
+  /tmp/pin-ik-stage-b/bench-a/allocation_probe tests/robot.urdf
+```
+
+输出 backend 0/1/2 分别是 Newton、NLopt、双线程入口；每组预热 100 次后计数 1000 次。仅在调用区间启用全进程 `malloc/calloc/realloc` 计数，因此包含工作线程与第三方依赖的对应分配。它不覆盖自定义分配器、直接 `mmap` 或所有 aligned allocator，不证明全调用零分配。不要用 preload 下的耗时评价性能。

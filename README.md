@@ -251,6 +251,8 @@ pinocchio::forwardKinematics(model, data, q);
 
 1000 Hz 控制需要显式分配 IK 时间预算，默认 `timeout=0.005` 是 5 ms。常驻线程消除了逐次创建开销，条件变量唤醒和协作式求解退出仍有延迟；`timeout` 不是整个调用墙钟耗时的严格上界。设计与验证方法见 [实时优化方案](docs/REALTIME_IK_OPTIMIZATION_PLAN.md)。
 
+阶段 B 将预算统一为从 `CartToJnt()` 入口计算的 `steady_clock` 截止时间，工作线程、Newton 迭代、NLopt 回调和随机重启共享该截止时间。预算耗尽后不再启动新求解，但仍等待两个线程完成收尾。NLopt 的正常强制停止和舍入停滞按求解状态处理；内存不足、非法优化参数等意外异常传播给调用方。工作缓冲区与 `Speed` 的两个候选槽会复用，第三方库内部仍可能分配内存。实现和测试记录见 [阶段 B 验证报告](docs/REALTIME_IK_STAGE_B_VALIDATION.md)。
+
 ## 测试与诊断
 
 自动化测试：

@@ -29,6 +29,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 ********************************************************************************/
 
 #include <pin_ik/pinocchio_tl.hpp>
+#include <pin_ik/solve_deadline.hpp>
 #include <cfloat>
 #include <pinocchio/algorithm/kinematics.hpp>
 #include <pinocchio/algorithm/jacobian.hpp>
@@ -44,7 +45,9 @@ ChainIkSolverPos_TL::ChainIkSolverPos_TL(const pinocchio::Model& _model,
                                           double _maxtime, double _eps,
                                           bool _random_restart, bool _try_jl_wrap):
   model(_model), tip_frame_id(_tip_frame_id), q_min(_q_min), q_max(_q_max),
-  delta_q(_model.nv), maxtime(_maxtime), eps(_eps), rr(_random_restart), wrap(_try_jl_wrap)
+  delta_q(_model.nv), configuration(_model.nq), q_curr(_model.nv), diff_q(_model.nv),
+  jacobian(6, _model.nv), decomposition(6, _model.nv),
+  maxtime(_maxtime), eps(_eps), rr(_random_restart), wrap(_try_jl_wrap)
 {
   ::PIN_IK::validateLimits(model, _q_min, _q_max);
   if (tip_frame_id >= model.frames.size()) throw std::invalid_argument("Invalid tip frame");
@@ -53,28 +56,43 @@ ChainIkSolverPos_TL::ChainIkSolverPos_TL(const pinocchio::Model& _model,
   reset();
 
   types = ::PIN_IK::jointTypes(model);
+  tip_covers_model = model.supports[model.frames[tip_frame_id].parentJoint].size() == model.njoints;
 
 }
 
+#ifdef PIN_IK_TESTING
+void (*ChainIkSolverPos_TL::test_hook)(ChainIkSolverPos_TL&, const char*) = nullptr;
+#endif
+
 int ChainIkSolverPos_TL::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,
                                     Eigen::VectorXd &q_out, const pinocchio::Motion _bounds)
+{
+  return CartToJntUntil(q_init, p_in, q_out, _bounds,
+                       detail::deadlineAfter(std::chrono::steady_clock::now(), maxtime));
+}
+
+int ChainIkSolverPos_TL::CartToJntUntil(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,
+                                     Eigen::VectorXd &q_out, const pinocchio::Motion& _bounds,
+                                     std::chrono::steady_clock::time_point deadline)
 {
   if (q_init.size() != model.nv || !q_init.allFinite()) return -1;
   if (aborted)
     return -3;
 
-  auto start_time = std::chrono::steady_clock::now();
   q_out = q_init;
   bounds = _bounds;
-
-  double time_left;
-
-  do
+  const auto stopped = [&] { return aborted || std::chrono::steady_clock::now() >= deadline; };
+  while (!stopped())
   {
+#ifdef PIN_IK_TESTING
+    if (test_hook) test_hook(*this, "before_fk");
+#endif
+    if (stopped()) break;
     // Forward kinematics
-    pinocchio::forwardKinematics(model, *data, ::PIN_IK::toPinocchioConfiguration(model, q_out));
-    pinocchio::updateFramePlacements(model, *data);
-    f = data->oMf[tip_frame_id];
+    ::PIN_IK::toPinocchioConfiguration(model, q_out, configuration);
+    pinocchio::forwardKinematics(model, *data, configuration);
+    f = pinocchio::updateFramePlacement(model, *data, tip_frame_id);
+    if (stopped()) break;
 
     delta_twist = diffRelative(p_in, f);
 
@@ -101,19 +119,27 @@ int ChainIkSolverPos_TL::CartToJnt(const Eigen::VectorXd &q_init, const pinocchi
     delta_twist = pinocchio::log6(diff);
 
     // Compute Jacobian
-    pinocchio::Data::Matrix6x J(6, model.nv);
-    J.setZero();
-    pinocchio::computeFrameJacobian(model, *data, ::PIN_IK::toPinocchioConfiguration(model, q_out), tip_frame_id,
-                                     pinocchio::LOCAL, J);
+    if (stopped()) break;
+    jacobian.setZero();
+    if (tip_covers_model) {
+      // FK above already populated joint placements/subspaces. Reuse them without
+      // another forward pass; retain the tip-only path for models with branches.
+      pinocchio::computeJointJacobians(model, *data);
+      pinocchio::getFrameJacobian(model, *data, tip_frame_id, pinocchio::LOCAL, jacobian);
+    } else {
+      pinocchio::computeFrameJacobian(model, *data, configuration, tip_frame_id,
+                                       pinocchio::LOCAL, jacobian);
+    }
+    if (stopped()) break;
 
     // Solve for delta_q using pseudo-inverse
-    Eigen::VectorXd twist_vec(6);
-    twist_vec << delta_twist.linear(), delta_twist.angular();
-
-    delta_q = J.completeOrthogonalDecomposition().solve(twist_vec);
+    decomposition.compute(jacobian);
+    if (stopped()) break;
+    delta_q = decomposition.solve(delta_twist.toVector());
+    if (stopped()) break;
 
     // Scalar angles are the coordinates of the supported one-DOF joints.
-    Eigen::VectorXd q_curr = q_out + delta_q;
+    q_curr = q_out + delta_q;
 
     // Apply joint limits
     for (int j = 0; j < q_min.size(); j++)
@@ -158,12 +184,13 @@ int ChainIkSolverPos_TL::CartToJnt(const Eigen::VectorXd &q_init, const pinocchi
       }
     }
 
-    Eigen::VectorXd diff_q = q_out - q_curr;
+    diff_q = q_out - q_curr;
 
     if (diff_q.isZero(FLT_EPSILON))
     {
       if (rr)
       {
+        if (stopped()) break;
         for (int j = 0; j < q_out.size(); j++)
           if (types[j] == Continuous)
             q_curr(j) = fRand(q_curr(j) - 2 * M_PI, q_curr(j) + 2 * M_PI);
@@ -174,10 +201,7 @@ int ChainIkSolverPos_TL::CartToJnt(const Eigen::VectorXd &q_init, const pinocchi
 
     q_out = q_curr;
 
-    auto timediff = std::chrono::steady_clock::now() - start_time;
-    time_left = maxtime - std::chrono::duration<double>(timediff).count();
   }
-  while (time_left > 0 && !aborted);
 
   return -3;
 }

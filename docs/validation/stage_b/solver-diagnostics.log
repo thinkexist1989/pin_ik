@@ -1,0 +1,8 @@
+deadline_tail calls=1000 mean_us=7.22637 max_us=163.783 cancel_to_complete_max_us=163.584
+kinematics branched=0 path=0 mean_us=0.330103 max_derivative_error=1.36263e-08
+kinematics branched=0 path=1 mean_us=0.268256 max_derivative_error=1.36263e-08
+kinematics branched=0 path=2 mean_us=0.282576 max_derivative_error=1.36263e-08
+kinematics branched=1 path=0 mean_us=0.548803 max_derivative_error=1.36263e-08
+kinematics branched=1 path=1 mean_us=0.616423 max_derivative_error=1.36263e-08
+kinematics branched=1 path=2 mean_us=0.594006 max_derivative_error=1.36263e-08
+Deadline, cancellation, callback outputs, exception recovery and kinematics passed

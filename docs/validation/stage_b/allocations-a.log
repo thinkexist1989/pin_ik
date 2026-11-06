@@ -1,0 +1,6 @@
+backend=0 exact=1 calls=1000 allocations=1000 mean=1 max=1
+backend=1 exact=1 calls=1000 allocations=9000 mean=9 max=9
+backend=2 exact=1 calls=1000 allocations=12934 mean=12.934 max=15
+backend=0 exact=0 calls=1000 allocations=16000 mean=16 max=16
+backend=1 exact=0 calls=1000 allocations=539745 mean=539.745 max=2850
+backend=2 exact=0 calls=1000 allocations=40514 mean=40.514 max=595

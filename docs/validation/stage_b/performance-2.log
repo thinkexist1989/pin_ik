@@ -1,0 +1,28 @@
+performance_cartesian_smooth_mode0_stage_b samples=20000 success=20000 invalid=0 mean_us=13.7178 max_us=378.978 over_1ms=0 max_position_error=8.16885e-07 max_rotation_error=9.918e-07
+performance_cartesian_smooth_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=13.4834 max_us=283.342 over_1ms=0 max_position_error=5.96061e-07 max_rotation_error=5.24608e-07
+performance_cartesian_smooth_mode0_baseline samples=20000 success=19992 invalid=0 mean_us=51.1836 max_us=2233.61 over_1ms=6 max_position_error=8.30756e-07 max_rotation_error=9.2692e-07
+performance_cartesian_smooth_mode0_kdl samples=20000 success=19996 invalid=0 mean_us=59.3409 max_us=2231.28 over_1ms=8 max_position_error=1.42008e-06 max_rotation_error=1.25226e-06
+  paired stage_b vs stage_a: both_solved=20000 max_joint_difference=7.8830335e-07
+  paired stage_b vs baseline: both_solved=19992 max_joint_difference=8.08467807e-07
+  paired stage_b vs kdl: both_solved=19996 max_joint_difference=1.08476158e-06
+performance_cartesian_exact_mode0_stage_b samples=20000 success=20000 invalid=0 mean_us=9.59606 max_us=165.887 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_cartesian_exact_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=9.94679 max_us=589.291 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_cartesian_exact_mode0_baseline samples=20000 success=19994 invalid=0 mean_us=53.212 max_us=2702.39 over_1ms=6 max_position_error=0 max_rotation_error=0
+performance_cartesian_exact_mode0_kdl samples=20000 success=19996 invalid=0 mean_us=44.5006 max_us=2552.57 over_1ms=5 max_position_error=0 max_rotation_error=0
+  paired stage_b vs stage_a: both_solved=20000 max_joint_difference=0
+  paired stage_b vs baseline: both_solved=19994 max_joint_difference=0
+  paired stage_b vs kdl: both_solved=19996 max_joint_difference=0
+performance_arm6_smooth_mode0_stage_b samples=20000 success=20000 invalid=0 mean_us=12.4715 max_us=245.492 over_1ms=0 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+performance_arm6_smooth_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=14.5651 max_us=457.169 over_1ms=0 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+performance_arm6_smooth_mode0_baseline samples=20000 success=19991 invalid=0 mean_us=48.6938 max_us=2121.35 over_1ms=6 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+performance_arm6_smooth_mode0_kdl samples=20000 success=19992 invalid=0 mean_us=61.1012 max_us=2132.84 over_1ms=6 max_position_error=1.31348e-06 max_rotation_error=7.99603e-07
+  paired stage_b vs stage_a: both_solved=20000 max_joint_difference=0.019871906
+  paired stage_b vs baseline: both_solved=19991 max_joint_difference=0.019871906
+  paired stage_b vs kdl: both_solved=19992 max_joint_difference=0.0201852732
+performance_arm6_exact_mode0_stage_b samples=20000 success=20000 invalid=0 mean_us=9.34875 max_us=310.925 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_arm6_exact_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=9.52459 max_us=231.127 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_arm6_exact_mode0_baseline samples=20000 success=19997 invalid=0 mean_us=48.637 max_us=2851.4 over_1ms=9 max_position_error=0 max_rotation_error=0
+performance_arm6_exact_mode0_kdl samples=20000 success=19996 invalid=0 mean_us=46.2945 max_us=2511.51 over_1ms=5 max_position_error=0 max_rotation_error=0
+  paired stage_b vs stage_a: both_solved=20000 max_joint_difference=0
+  paired stage_b vs baseline: both_solved=19997 max_joint_difference=0
+  paired stage_b vs kdl: both_solved=19996 max_joint_difference=0

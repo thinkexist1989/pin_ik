@@ -39,6 +39,8 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <nlopt.hpp>
 #include <memory>
 
+struct dual_quaternion;
+
 namespace PIN_IK {
   class PIN_IK;
 }
@@ -56,7 +58,7 @@ public:
            const Eigen::VectorXd& _q_max, pinocchio::FrameIndex _tip_frame_id,
            double _maxtime = 0.005, double _eps = 1e-3, OptType _type = SumSq);
 
-  ~NLOPT_IK() {};
+  ~NLOPT_IK();
 
   int CartToJnt(const Eigen::VectorXd& q_init, const pinocchio::SE3& p_in,
                 Eigen::VectorXd& q_out, const pinocchio::Motion bounds = pinocchio::Motion::Zero(),
@@ -73,6 +75,26 @@ public:
   }
 
 private:
+  friend double minfuncDQ(const std::vector<double>&, std::vector<double>&, void*);
+  friend double minfuncSumSquared(const std::vector<double>&, std::vector<double>&, void*);
+  friend double minfuncL2(const std::vector<double>&, std::vector<double>&, void*);
+  friend void constrainfuncm(unsigned, double*, unsigned, const double*, double*, void*);
+  using ErrorFunction = void (NLOPT_IK::*)(const std::vector<double>&, double*);
+  double objective(const std::vector<double>& x, double* grad, ErrorFunction error);
+  bool stopped() const;
+  bool stopCallback();
+  int CartToJntUntil(const Eigen::VectorXd& q_init, const pinocchio::SE3& p_in,
+                    Eigen::VectorXd& q_out, const pinocchio::Motion& bounds,
+                    std::chrono::steady_clock::time_point deadline,
+                    const Eigen::VectorXd& q_desired = Eigen::VectorXd());
+  std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max();
+  std::vector<double> x, perturbation, constraint_values, artificial_lower_limits, artificial_upper_limits;
+  Eigen::VectorXd angles, configuration;
+  std::unique_ptr<dual_quaternion> targetDQ;
+#ifdef PIN_IK_TESTING
+  friend struct SolverTestAccess;
+  static void (*test_hook)(NLOPT_IK&, const char*);
+#endif
 
   inline void abort()
   {
@@ -112,7 +134,7 @@ private:
   pinocchio::SE3 currentPose;
 
   std::vector<double> best_x;
-  int progress;
+  int progress = -3;
   std::atomic<bool> aborted{false};
 
   pinocchio::Motion bounds;

@@ -29,6 +29,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 ********************************************************************************/
 
 #include <pin_ik/nlopt_ik.hpp>
+#include <pin_ik/solve_deadline.hpp>
 #include <limits>
 #include <pin_ik/dual_quaternion.h>
 #include <cmath>
@@ -39,7 +40,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace NLOPT_IK
 {
 
-dual_quaternion targetDQ;
+#ifdef PIN_IK_TESTING
+void (*NLOPT_IK::test_hook)(NLOPT_IK&, const char*) = nullptr;
+#endif
 
 double minfunc(const std::vector<double>& x, std::vector<double>& grad, void* data)
 {
@@ -50,117 +53,64 @@ double minfunc(const std::vector<double>& x, std::vector<double>& grad, void* da
 double minfuncDQ(const std::vector<double>& x, std::vector<double>& grad, void* data)
 {
   NLOPT_IK *c = (NLOPT_IK *) data;
-
-  std::vector<double> vals(x);
-
-  double jump = FLT_EPSILON;
-  double result[1];
-  c->cartDQError(vals, result);
-
-  if (!grad.empty())
-  {
-    double v1[1];
-    for (uint i = 0; i < x.size(); i++)
-    {
-      double original = vals[i];
-
-      vals[i] = original + jump;
-      c->cartDQError(vals, v1);
-
-      vals[i] = original;
-      grad[i] = (v1[0] - result[0]) / (2 * jump);
-    }
-  }
-
-  return result[0];
+  return c->objective(x, grad.empty() ? nullptr : grad.data(), &NLOPT_IK::cartDQError);
 }
 
 double minfuncSumSquared(const std::vector<double>& x, std::vector<double>& grad, void* data)
 {
   NLOPT_IK *c = (NLOPT_IK *) data;
 
-  std::vector<double> vals(x);
-
-  double jump = FLT_EPSILON;
-  double result[1];
-  c->cartSumSquaredError(vals, result);
-
-  if (!grad.empty())
-  {
-    double v1[1];
-    for (uint i = 0; i < x.size(); i++)
-    {
-      double original = vals[i];
-
-      vals[i] = original + jump;
-      c->cartSumSquaredError(vals, v1);
-
-      vals[i] = original;
-      grad[i] = (v1[0] - result[0]) / (2.0 * jump);
-    }
-  }
-
-  return result[0];
+  return c->objective(x, grad.empty() ? nullptr : grad.data(), &NLOPT_IK::cartSumSquaredError);
 }
 
 double minfuncL2(const std::vector<double>& x, std::vector<double>& grad, void* data)
 {
   NLOPT_IK *c = (NLOPT_IK *) data;
 
-  std::vector<double> vals(x);
-
-  double jump = FLT_EPSILON;
-  double result[1];
-  c->cartL2NormError(vals, result);
-
-  if (!grad.empty())
-  {
-    double v1[1];
-    for (uint i = 0; i < x.size(); i++)
-    {
-      double original = vals[i];
-
-      vals[i] = original + jump;
-      c->cartL2NormError(vals, v1);
-
-      vals[i] = original;
-      grad[i] = (v1[0] - result[0]) / (2.0 * jump);
-    }
-  }
-
-  return result[0];
+  return c->objective(x, grad.empty() ? nullptr : grad.data(), &NLOPT_IK::cartL2NormError);
 }
 
 void constrainfuncm(uint m, double* result, uint n, const double* x, double* grad, void* data)
 {
   NLOPT_IK *c = (NLOPT_IK *) data;
 
-  std::vector<double> vals(n);
+  // Joint mode registers exactly one scalar equality constraint.
+  if (m != 1 || n != c->x.size()) throw std::invalid_argument("Invalid constraint dimensions");
+  std::copy(x, x + n, c->constraint_values.begin());
+  result[0] = c->objective(c->constraint_values, grad, &NLOPT_IK::cartSumSquaredError);
+}
 
-  for (uint i = 0; i < n; i++)
-  {
-    vals[i] = x[i];
+bool NLOPT_IK::stopped() const
+{
+  return aborted || progress != -3 || std::chrono::steady_clock::now() >= deadline;
+}
+
+bool NLOPT_IK::stopCallback()
+{
+  if (!stopped()) return false;
+  opt.force_stop(); // Only the optimizer's owning thread touches opt.
+  return true;
+}
+
+double NLOPT_IK::objective(const std::vector<double>& values, double* grad, ErrorFunction error)
+{
+  if (grad) std::fill(grad, grad + values.size(), 0.0);
+  double result = std::numeric_limits<float>::max();
+  (this->*error)(values, &result);
+  if (stopCallback() || !grad) return result;
+  perturbation = values;
+  const double jump = FLT_EPSILON;
+  for (size_t i = 0; i < values.size(); ++i) {
+    if (stopCallback()) break;
+    perturbation[i] += jump;
+    double perturbed = std::numeric_limits<float>::max();
+    (this->*error)(perturbation, &perturbed);
+    perturbation[i] = values[i];
+    if (stopCallback()) break;
+    // Keep the legacy gradient scale; correcting it is a separate stage C change.
+    grad[i] = (perturbed - result) / (2.0 * jump);
   }
-
-  double jump = FLT_EPSILON;
-
-  c->cartSumSquaredError(vals, result);
-
-  if (grad != NULL)
-  {
-    std::vector<double> v1(m);
-    for (uint i = 0; i < n; i++)
-    {
-      double o = vals[i];
-      vals[i] = o + jump;
-      c->cartSumSquaredError(vals, v1.data());
-      vals[i] = o;
-      for (uint j = 0; j < m; j++)
-      {
-        grad[j * n + i] = (v1[j] - result[j]) / (2 * jump);
-      }
-    }
-  }
+  return result;
 }
 
 NLOPT_IK::NLOPT_IK(const pinocchio::Model& _model, const Eigen::VectorXd& _q_min,
@@ -172,6 +122,16 @@ NLOPT_IK::NLOPT_IK(const pinocchio::Model& _model, const Eigen::VectorXd& _q_min
   if (tip_frame_id >= model.frames.size()) throw std::invalid_argument("Invalid tip frame");
 
   data.reset(new pinocchio::Data(model));
+  targetDQ = std::make_unique<dual_quaternion>();
+  x.resize(model.nv);
+  perturbation.resize(model.nv);
+  constraint_values.resize(model.nv);
+  artificial_lower_limits.resize(model.nv);
+  artificial_upper_limits.resize(model.nv);
+  des.resize(model.nv);
+  best_x.resize(model.nv);
+  angles.resize(model.nv);
+  configuration.resize(model.nq);
   reset();
 
   opt = nlopt::opt(nlopt::LD_SLSQP, model.nv);
@@ -205,8 +165,12 @@ NLOPT_IK::NLOPT_IK(const pinocchio::Model& _model, const Eigen::VectorXd& _q_min
   }
 }
 
+NLOPT_IK::~NLOPT_IK() = default;
+
 double NLOPT_IK::minJoints(const std::vector<double>& x, std::vector<double>& grad)
 {
+  std::fill(grad.begin(), grad.end(), 0.0);
+  if (stopCallback()) return std::numeric_limits<float>::max();
   bool gradient = !grad.empty();
 
   double err = 0;
@@ -222,19 +186,20 @@ double NLOPT_IK::minJoints(const std::vector<double>& x, std::vector<double>& gr
 
 void NLOPT_IK::cartSumSquaredError(const std::vector<double>& x, double error[])
 {
-  if (aborted || progress != -3)
-  {
-    opt.force_stop();
-    return;
-  }
-
-  Eigen::VectorXd q(x.size());
+  if (x.size() != static_cast<size_t>(model.nv))
+    throw std::invalid_argument("Invalid callback joint dimensions");
+  error[0] = std::numeric_limits<float>::max();
+#ifdef PIN_IK_TESTING
+  if (test_hook) test_hook(*this, "error_callback");
+#endif
+  if (stopCallback()) return;
   for (uint i = 0; i < x.size(); i++)
-    q(i) = x[i];
+    angles(i) = x[i];
 
-  pinocchio::forwardKinematics(model, *data, PIN_IK::toPinocchioConfiguration(model, q));
-  pinocchio::updateFramePlacements(model, *data);
-  currentPose = data->oMf[tip_frame_id];
+  PIN_IK::toPinocchioConfiguration(model, angles, configuration);
+  pinocchio::forwardKinematics(model, *data, configuration);
+  currentPose = pinocchio::updateFramePlacement(model, *data, tip_frame_id);
+  if (stopCallback()) return;
 
   if (std::isnan(currentPose.translation().x()))
   {
@@ -266,19 +231,20 @@ void NLOPT_IK::cartSumSquaredError(const std::vector<double>& x, double error[])
 
 void NLOPT_IK::cartL2NormError(const std::vector<double>& x, double error[])
 {
-  if (aborted || progress != -3)
-  {
-    opt.force_stop();
-    return;
-  }
-
-  Eigen::VectorXd q(x.size());
+  if (x.size() != static_cast<size_t>(model.nv))
+    throw std::invalid_argument("Invalid callback joint dimensions");
+  error[0] = std::numeric_limits<float>::max();
+#ifdef PIN_IK_TESTING
+  if (test_hook) test_hook(*this, "error_callback");
+#endif
+  if (stopCallback()) return;
   for (uint i = 0; i < x.size(); i++)
-    q(i) = x[i];
+    angles(i) = x[i];
 
-  pinocchio::forwardKinematics(model, *data, PIN_IK::toPinocchioConfiguration(model, q));
-  pinocchio::updateFramePlacements(model, *data);
-  currentPose = data->oMf[tip_frame_id];
+  PIN_IK::toPinocchioConfiguration(model, angles, configuration);
+  pinocchio::forwardKinematics(model, *data, configuration);
+  currentPose = pinocchio::updateFramePlacement(model, *data, tip_frame_id);
+  if (stopCallback()) return;
 
   if (std::isnan(currentPose.translation().x()))
   {
@@ -310,23 +276,20 @@ void NLOPT_IK::cartL2NormError(const std::vector<double>& x, double error[])
 
 void NLOPT_IK::cartDQError(const std::vector<double>& x, double error[])
 {
-  if (aborted || progress != -3)
-  {
-    opt.force_stop();
-    return;
-  }
-
-  Eigen::VectorXd q(x.size());
+  if (x.size() != static_cast<size_t>(model.nv))
+    throw std::invalid_argument("Invalid callback joint dimensions");
+  error[0] = std::numeric_limits<float>::max();
+#ifdef PIN_IK_TESTING
+  if (test_hook) test_hook(*this, "error_callback");
+#endif
+  if (stopCallback()) return;
   for (uint i = 0; i < x.size(); i++)
-    q(i) = x[i];
+    angles(i) = x[i];
 
-  // Normalize continuous joints to enforce unit circle constraint
-  // TODO: Need to identify which joints are continuous from the model
-  // For now, forward kinematics should be robust to small deviations
-
-  pinocchio::forwardKinematics(model, *data, PIN_IK::toPinocchioConfiguration(model, q));
-  pinocchio::updateFramePlacements(model, *data);
-  currentPose = data->oMf[tip_frame_id];
+  PIN_IK::toPinocchioConfiguration(model, angles, configuration);
+  pinocchio::forwardKinematics(model, *data, configuration);
+  currentPose = pinocchio::updateFramePlacement(model, *data, tip_frame_id);
+  if (stopCallback()) return;
 
   if (std::isnan(currentPose.translation().x()))
   {
@@ -364,7 +327,7 @@ void NLOPT_IK::cartDQError(const std::vector<double>& x, double error[])
 
   dual_quaternion currentDQ = dual_quaternion::rigid_transformation(currentQuat, currentTrans);
 
-  dual_quaternion errorDQ = (currentDQ * !targetDQ).normalize();
+  dual_quaternion errorDQ = (currentDQ * !*targetDQ).normalize();
   errorDQ.log();
   error[0] = 4.0f * dot(errorDQ, errorDQ);
 
@@ -380,7 +343,17 @@ int NLOPT_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_i
                         Eigen::VectorXd &q_out, const pinocchio::Motion _bounds,
                         const Eigen::VectorXd& q_desired)
 {
-  auto start_time = std::chrono::steady_clock::now();
+  return CartToJntUntil(q_init, p_in, q_out, _bounds,
+      PIN_IK::detail::deadlineAfter(std::chrono::steady_clock::now(), maxtime), q_desired);
+}
+
+int NLOPT_IK::CartToJntUntil(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,
+                           Eigen::VectorXd &q_out, const pinocchio::Motion& _bounds,
+                           std::chrono::steady_clock::time_point task_deadline,
+                           const Eigen::VectorXd& q_desired)
+{
+  deadline = task_deadline;
+  progress = -3;
 
   bounds = _bounds;
   q_out = q_init;
@@ -392,7 +365,9 @@ int NLOPT_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_i
     return -3;
   }
 
-  opt.set_maxtime(maxtime);
+  if (stopped()) return -3;
+  if (q_desired.size() && (q_desired.size() != model.nv || !q_desired.allFinite()))
+    throw std::invalid_argument("Invalid desired joint values");
 
   double minf;
   targetPose = p_in;
@@ -410,10 +385,8 @@ int NLOPT_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_i
     targetTranslation.x = targetPose.translation().x();
     targetTranslation.y = targetPose.translation().y();
     targetTranslation.z = targetPose.translation().z();
-    targetDQ = dual_quaternion::rigid_transformation(targetQuaternion, targetTranslation);
+    *targetDQ = dual_quaternion::rigid_transformation(targetQuaternion, targetTranslation);
   }
-
-  std::vector<double> x(model.nv);
 
   for (int i = 0; i < x.size(); i++)
   {
@@ -449,8 +422,6 @@ int NLOPT_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_i
   best_x = x;
   progress = -3;
 
-  std::vector<double> artificial_lower_limits(lb.size());
-
   for (uint i = 0; i < lb.size(); i++)
     if (types[i] == PIN_IK::Continuous)
       artificial_lower_limits[i] = best_x[i] - 2 * M_PI;
@@ -460,8 +431,6 @@ int NLOPT_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_i
       artificial_lower_limits[i] = std::max(lb[i], best_x[i] - 2 * M_PI);
 
   opt.set_lower_bounds(artificial_lower_limits);
-
-  std::vector<double> artificial_upper_limits(lb.size());
 
   for (uint i = 0; i < ub.size(); i++)
     if (types[i] == PIN_IK::Continuous)
@@ -479,46 +448,33 @@ int NLOPT_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_i
   }
   else
   {
-    des.resize(x.size());
     for (uint i = 0; i < des.size(); i++)
       des[i] = q_desired(i);
   }
 
-  try
+  while (!stopped())
   {
-    opt.optimize(x, minf);
-  }
-  catch (...)
-  {
-  }
-
-  if (progress == -1)
-    progress = -3;
-
-  if (!aborted && progress < 0)
-  {
-    auto diff = std::chrono::steady_clock::now() - start_time;
-    auto time_left = maxtime - std::chrono::duration<double>(diff).count();
-
-    while (time_left > 0 && !aborted && progress < 0)
+#ifdef PIN_IK_TESTING
+    if (test_hook) test_hook(*this, "before_optimize");
+#endif
+    const double time_left = std::chrono::duration<double>(deadline - std::chrono::steady_clock::now()).count();
+    // NLopt interprets a non-positive maxtime as NO time limit.
+    if (aborted || time_left <= 0) break;
+    opt.set_maxtime(time_left);
+    try
     {
-      for (uint i = 0; i < x.size(); i++)
-        x[i] = fRand(artificial_lower_limits[i], artificial_upper_limits[i]);
-
-      opt.set_maxtime(time_left);
-
-      try
-      {
-        opt.optimize(x, minf);
-      }
-      catch (...) {}
-
-      if (progress == -1)
-        progress = -3;
-
-      auto diff = std::chrono::steady_clock::now() - start_time;
-      time_left = maxtime - std::chrono::duration<double>(diff).count();
+      opt.optimize(x, minf);
     }
+    catch (const nlopt::forced_stop&) {
+      if (!stopped()) throw;
+    }
+    catch (const nlopt::roundoff_limited&) {
+      // Expected numerical stagnation: retry within the same absolute budget.
+    }
+    if (progress == -1) progress = -3;
+    if (stopped()) break;
+    for (uint i = 0; i < x.size(); i++)
+      x[i] = fRand(artificial_lower_limits[i], artificial_upper_limits[i]);
   }
 
   for (uint i = 0; i < x.size(); i++)
