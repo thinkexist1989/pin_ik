@@ -46,6 +46,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <exception>
 #include <array>
 #include <Eigen/SVD>
+#include <pin_ik/worker_thread.hpp>
 
 namespace PIN_IK
 {
@@ -94,6 +95,16 @@ public:
   // Reseed independent worker/solver streams while idle. Scheduling can still
   // change which valid solution wins a parallel solve.
   void setRandomSeed(std::uint64_t seed);
+
+  // Non-real-time, idle-only operations; must not overlap any call/destruction
+  // on this instance. Linux only; other platforms throw system_error(ENOTSUP).
+  // Each setter changes one property on one worker, not a multi-call transaction.
+  // Invalid arguments throw invalid_argument; OS failures throw system_error.
+  // Affinity may be narrowed by OS/cpuset restrictions: read back actual settings.
+  // CPU IDs must be below CPU_SETSIZE (normally 1024 on Linux).
+  void setWorkerThreadAffinity(WorkerThread worker, const std::vector<int>& cpus);
+  void setWorkerThreadScheduling(WorkerThread worker, int policy, int priority);
+  WorkerThreadSettings getWorkerThreadSettings(WorkerThread worker);
 
   static double JointErr(const Eigen::VectorXd& arr1, const Eigen::VectorXd& arr2)
   {
@@ -170,6 +181,7 @@ private:
   void startWorkers();
   void stopWorkers();
   void workerLoop(unsigned index);
+  std::thread& workerThread(WorkerThread worker);
 
 #ifdef PIN_IK_TESTING
   friend struct WorkerTestAccess;

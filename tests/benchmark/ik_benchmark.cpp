@@ -18,6 +18,10 @@
 #include <sstream>
 #include <thread>
 
+#ifdef BENCH_WORKER_CONFIG
+#include "worker_configuration.hpp"
+#endif
+
 #ifdef BENCH_TIMING
 #include <cstring>
 #include <ctime>
@@ -181,10 +185,19 @@ struct Solver {
 
 int main(int argc, char** argv) {
   try {
+#ifdef BENCH_WORKER_CONFIG
+    if (argc != 9) throw std::invalid_argument(
+        "Usage: stage_d_benchmark output.csv samples timeout_seconds mode scenario robot period_us threads.conf");
+    BenchThreadConfiguration configuration(argv[8]);
+#else
     if (argc != 8) throw std::invalid_argument(
         "Usage: ik_benchmark output.csv samples timeout_seconds mode scenario robot period_us");
+#endif
     const int samples = std::stoi(argv[2]), mode = std::stoi(argv[4]);
     const double timeout = std::stod(argv[3]);
+#ifdef BENCH_WORKER_CONFIG
+    if (!std::isfinite(timeout) || timeout <= 0) throw std::invalid_argument("Timeout must be finite and positive");
+#endif
     const std::string scenario = argv[5];
     const int period_us = std::stoi(argv[7]);
     if (samples <= 0 || mode < 0 || mode > 4 || period_us < 0) throw std::invalid_argument("Invalid arguments");
@@ -226,7 +239,9 @@ int main(int argc, char** argv) {
     }
     Joints output;
     double elapsed;
+#ifndef BENCH_WORKER_CONFIG
     for (int i = 0; i < 100; ++i) solver.solve(cases[i % samples].seed, cases[i % samples].target, output, elapsed);
+#endif
     struct Row {
       int rc; double us, position, rotation, limit, lateness; Joints q;
 #ifdef BENCH_TIMING
@@ -235,6 +250,10 @@ int main(int argc, char** argv) {
 #endif
     };
     std::vector<Row> rows(samples);
+#ifdef BENCH_WORKER_CONFIG
+    configuration.apply(solver.solver);
+    for (int i = 0; i < 100; ++i) solver.solve(cases[i % samples].seed, cases[i % samples].target, output, elapsed);
+#endif
     auto release = std::chrono::steady_clock::now();
     for (int i = 0; i < samples; ++i) {
       if (period_us) { release += std::chrono::microseconds(period_us); std::this_thread::sleep_until(release); }
@@ -247,6 +266,10 @@ int main(int argc, char** argv) {
       row.lateness = period_us ? std::chrono::duration<double, std::micro>(
           std::chrono::steady_clock::now() - release).count() : 0;
     }
+#ifdef BENCH_WORKER_CONFIG
+    configuration.restore();
+    configuration.write(std::string(argv[1])+".threads.json");
+#endif
     // Validation and file output are outside all timed calls and periodic release loops.
     std::ofstream csv(argv[1]);
     if (!csv) throw std::runtime_error("Cannot open output CSV");
@@ -296,5 +319,10 @@ int main(int argc, char** argv) {
               << " max_position_error=" << max_position << " max_rotation_error=" << max_rotation << '\n';
     if (invalid || (scenario == "unreachable" && success)) return 1;
     return 0;
+#ifdef BENCH_WORKER_CONFIG
+  } catch (const std::system_error& error) {
+    std::cerr << error.what() << '\n';
+    return error.code().value()==EPERM || error.code().value()==EACCES ? 77 : 1;
+#endif
   } catch (const std::exception& error) { std::cerr << error.what() << '\n'; return 1; }
 }

@@ -1,0 +1,100 @@
+Internal ctest changing into directory: /tmp/pin-ik-stage-d/release
+UpdateCTestConfiguration  from :/tmp/pin-ik-stage-d/release/DartConfiguration.tcl
+Parse Config file:/tmp/pin-ik-stage-d/release/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/tmp/pin-ik-stage-d/release/DartConfiguration.tcl
+Parse Config file:/tmp/pin-ik-stage-d/release/DartConfiguration.tcl
+Test project /tmp/pin-ik-stage-d/release
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+      Start  1: cpp_standalone
+
+1: Test command: /tmp/pin-ik-stage-d/release/tests/standalone_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+1: Test timeout computed to be: 1500
+1: Error:   Error document empty.
+1:          at line 100 in ./urdf_parser/src/model.cpp
+1: All five solve modes, 100 6R targets, analytic FK, limits, invalid inputs and timeout passed
+ 1/10 Test  #1: cpp_standalone ...................   Passed    0.17 sec
+test 2
+      Start  2: persistent_workers
+
+2: Test command: /tmp/pin-ik-stage-d/release/tests/worker_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+2: Test timeout computed to be: 180
+2: Worker lifecycle, gated scheduling, rollback, exceptions, modes, limits, 100000 mixed calls and parallel instances passed
+ 2/10 Test  #2: persistent_workers ...............   Passed    3.15 sec
+test 3
+      Start  3: solver_deadlines
+
+3: Test command: /tmp/pin-ik-stage-d/release/tests/solver_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+3: Test timeout computed to be: 60
+3: deadline_tail calls=1000 mean_us=8.10271 max_us=162.281 cancel_to_complete_max_us=161.97
+3: kinematics branched=0 path=0 mean_us=0.349695 max_derivative_error=1.36263e-08
+3: kinematics branched=0 path=1 mean_us=0.273801 max_derivative_error=1.36263e-08
+3: kinematics branched=0 path=2 mean_us=0.27674 max_derivative_error=1.36263e-08
+3: kinematics branched=1 path=0 mean_us=0.536005 max_derivative_error=1.36263e-08
+3: kinematics branched=1 path=1 mean_us=0.62081 max_derivative_error=1.36263e-08
+3: kinematics branched=1 path=2 mean_us=0.583099 max_derivative_error=1.36263e-08
+3: Deadline, cancellation, callback outputs, exception recovery and kinematics passed
+ 3/10 Test  #3: solver_deadlines .................   Passed    0.70 sec
+test 4
+      Start  4: numerical_gradients
+
+4: Test command: /tmp/pin-ik-stage-d/release/tests/gradient_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+4: Test timeout computed to be: 1500
+4: type=2 samples=150 max_normalized_error=4.48774e-08 mean_gradient_scale=1
+4: type=3 samples=150 max_normalized_error=2.99103e-08 mean_gradient_scale=1
+4: type=1 samples=150 max_normalized_error=3.27142e-07 mean_gradient_scale=1
+4: type=0 samples=150 max_normalized_error=5.10399e-08 mean_gradient_scale=1
+ 4/10 Test  #4: numerical_gradients ..............   Passed    0.01 sec
+test 5
+      Start  5: optimization_regressions
+
+5: Test command: /tmp/pin-ik-stage-d/release/tests/optimization_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+5: Test timeout computed to be: 60
+5: Independent random streams, reseeding, limits, concurrent scoring and candidate scores passed
+ 5/10 Test  #5: optimization_regressions .........   Passed    0.15 sec
+test 6
+      Start  6: worker_thread_configuration
+
+6: Test command: /tmp/pin-ik-stage-d/release/tests/worker_thread_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+6: Test timeout computed to be: 60
+6: Worker settings, native readback, invalid requests, 1000 solves, limits, IDs and restore passed
+ 6/10 Test  #6: worker_thread_configuration ......   Passed    0.02 sec
+test 7
+      Start  7: worker_thread_realtime
+
+7: Test command: /tmp/pin-ik-stage-d/release/tests/worker_thread_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf" "--realtime"
+7: Test timeout computed to be: 60
+7: FIFO/RR priority 1 applied and read back on both workers
+7: Worker settings, native readback, invalid requests, 1000 solves, limits, IDs and restore passed
+ 7/10 Test  #7: worker_thread_realtime ...........   Passed    0.02 sec
+test 8
+      Start  8: worker_thread_permission
+
+8: Test command: /tmp/pin-ik-stage-d/release/tests/worker_thread_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf" "--deny-realtime"
+8: Test timeout computed to be: 60
+8: Real kernel EPERM reported; previous explicit affinity retained
+8: Worker settings, native readback, invalid requests, 1000 solves, limits, IDs and restore passed
+ 8/10 Test  #8: worker_thread_permission .........   Passed    0.02 sec
+test 9
+      Start  9: worker_thread_unsupported
+
+9: Test command: /tmp/pin-ik-stage-d/release/tests/worker_thread_unsupported_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+9: Test timeout computed to be: 1500
+9: All unsupported operations reported ENOTSUP
+ 9/10 Test  #9: worker_thread_unsupported ........   Passed    0.01 sec
+test 10
+      Start 10: example_random_ik
+
+10: Test command: /tmp/pin-ik-stage-d/release/examples/ik_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf" "base" "tip" "100"
+10: Test timeout computed to be: 1500
+10: Solved 100/100; FK tolerance 1e-4; joint limits checked
+10/10 Test #10: example_random_ik ................   Passed    0.01 sec
+
+100% tests passed, 0 tests failed out of 10
+
+Total Test time (real) =   4.26 sec

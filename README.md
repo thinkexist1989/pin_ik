@@ -6,7 +6,8 @@ PIN-IK 完全移除了 KDL、ROS、MoveIt 与参数服务器依赖，只需一�
 
 **特性**
 
-- **双线程并行求解**：Jacobian 迭代求解器与 NLopt 全局优化器同时运行，先得到解者胜出
+- **常驻双线程并行求解**：Jacobian 迭代求解器与 NLopt 求解器并行运行，逐次调用不创建或销毁线程
+- **可选线程配置**：Linux 下可显式设置两个工作线程的 CPU 亲和性、调度策略和优先级，并读回实际值
 - **五种求解模式**：`Speed`、`Distance`、`Manip1`、`Manip2`、`Manip3`
 - **支持连续关节**：正确区分配置空间 `nq` 与速度空间 `nv`，连续关节支持任意圈数
 - **仅需 URDF**：自动提取 base → tip 的串联链，位姿以 base 为参考系
@@ -17,10 +18,11 @@ PIN-IK 完全移除了 KDL、ROS、MoveIt 与参数服务器依赖，只需一�
 
 ```text
 include/pin_ik/   公共头文件（库的对外接口）
-src/              核心库实现（pin_ik / pinocchio_tl / nlopt_ik / urdf）
+src/              核心库实现（pin_ik / pinocchio_tl / nlopt_ik / urdf / worker_thread）
 examples/         示例程序（ik_tests）
 tests/            自动化测试与测试模型（robot.urdf）
 tests/manual/     按需构建的手动诊断程序
+tests/benchmark/  独立构建的性能基准与线程配置验证工具
 scripts/          维护脚本（含历史迁移脚本）
 docs/             技术文档
 cmake/            安装包配置（pin_ikConfig.cmake.in）
@@ -43,8 +45,11 @@ cmake/            安装包配置（pin_ikConfig.cmake.in）
 | NLopt | 2.x | 非线性优化 |
 | urdfdom | — | URDF 解析（独立版本，非 ROS） |
 | Boost | — | 序列化（Pinocchio 传递依赖） |
+| 系统线程库 | CMake `Threads::Threads` | 已有依赖；Linux 下使用 pthread |
 
-可选：`pkg-config`，用于简化依赖查找。
+可选：`pkg-config`，用于简化依赖查找；Python 3，用于运行基准对比及工具检查脚本（仅使用 Python 标准库，核心库不依赖 Python）。
+
+阶段 D1 没有新增核心库的第三方依赖，也没有提高 C++ 或依赖版本要求。新线程配置接口使用 Linux 的 pthread 扩展，由现有 `Threads::Threads` 链接；使用下文的 CMake 导入目标无需手动追加链接参数。非 Linux 平台调用这些配置/查询接口会抛出 `std::errc::not_supported`。
 
 Ubuntu / Debian 上安装：
 
@@ -63,6 +68,8 @@ sudo make install
 ```
 
 ### 2. 构建与测试
+
+核心库的配置、构建和安装命令保持不变；升级时重新配置并构建，新源文件和公共头文件会自动纳入构建与安装。使用新接口时，头文件和库必须来自同一版本。
 
 ```bash
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -207,8 +214,47 @@ PIN_IK::PIN_IK solver(model, lower_limits, upper_limits, tip_frame_id,
 | `getSolutions(solutions)` / `getSolutions(solutions, errors)` | 取回全部解（后者附带误差排序信息） |
 | `setLimits(lb, ub)` | 更新关节限位 |
 | `SetSolveType(type)` | 切换求解模式 |
+| `setRandomSeed(seed)` | 空闲时重置实例内随机序列 |
+| `setWorkerThreadAffinity(worker, cpus)` | 空闲时设置指定工作线程的 CPU 集合（Linux） |
+| `setWorkerThreadScheduling(worker, policy, priority)` | 空闲时设置指定工作线程的调度策略和优先级（Linux） |
+| `getWorkerThreadSettings(worker)` | 读回工作线程的实际 `cpus`、`policy`、`priority`（Linux） |
 
-`CartToJnt` 是阻塞调用：返回时要么已找到解，要么超时（`maxtime`）。
+`CartToJnt` 是阻塞调用，正常求解会等待两个工作线程完成本轮任务后返回。`timeout` 是搜索预算，包含唤醒和收尾的整个调用墙钟耗时可能超过该预算。
+
+### 配置工作线程（Linux，可选）
+
+已有调用方可继续直接使用 `CartToJnt`。未调用配置接口时，库保留线程已有的系统设置；不会自动选核或提升优先级。需要配置时，在构造完成后的非实时初始化阶段操作两个工作线程，再预热、进入控制循环。以下辅助函数逐项设置并验证读回结果：
+
+```cpp
+#include <pin_ik/pin_ik.hpp>
+#include <sched.h>
+#include <algorithm>
+#include <stdexcept>
+#include <vector>
+
+void configureWorker(PIN_IK::PIN_IK& solver, PIN_IK::WorkerThread worker,
+                     std::vector<int> cpus, int policy, int priority) {
+  std::sort(cpus.begin(), cpus.end());
+  cpus.erase(std::unique(cpus.begin(), cpus.end()), cpus.end());
+  solver.setWorkerThreadAffinity(worker, cpus);
+  solver.setWorkerThreadScheduling(worker, policy, priority);
+  const auto actual = solver.getWorkerThreadSettings(worker);
+  if (actual.cpus != cpus || actual.policy != policy || actual.priority != priority)
+    throw std::runtime_error("IK worker settings differ from request");
+}
+
+// 在初始化函数中调用，参数来自控制器的 CPU 和调度配置：
+// configureWorker(solver, PIN_IK::WorkerThread::Newton,
+//                 newton_cpus, SCHED_FIFO, newton_priority);
+// configureWorker(solver, PIN_IK::WorkerThread::Nlopt,
+//                 nlopt_cpus, SCHED_FIFO, nlopt_priority);
+```
+
+CPU 集合必须非空，编号须非负且小于 `CPU_SETSIZE`（通常为 1024）。`SCHED_OTHER` 使用优先级 0；`SCHED_FIFO` / `SCHED_RR` 的合法优先级由系统决定，实际设置还需满足权限及实时额度要求。CPU 与优先级由目标控制器分配，本库不提供生产默认值。
+
+无效参数抛出 `std::invalid_argument`；系统调用失败抛出保留错误码的 `std::system_error`。系统可能缩减亲和性掩码，因此设置成功仍需读回。多次设置不是事务，后一步失败不会撤销前一步；初始化中应让异常中止实例发布，销毁该实例或显式恢复已保存的原设置，全部验证通过后才进入伺服循环。
+
+库接口只操作指定的 IK 工作线程。调用线程由控制器管理；`setLimits()` 保留工作线程配置，销毁后重建实例则需重新应用。配置和查询不得与同一实例的其他调用或析构并发。
 
 ### 求解模式
 
@@ -245,7 +291,7 @@ pinocchio::forwardKinematics(model, data, q);
 - 单个 `PIN_IK` 实例不可被多个线程同时调用 `CartToJnt`（内部复用 `pinocchio::Data` 与解缓存）。
 - 每个线程各持一个实例即可并行求解；同一次调用内部已经使用两个线程，无需再外包一层并行。
 - 每个实例在构造时启动两个常驻工作线程，`CartToJnt` 通过条件变量分发任务，等待两线程完成本轮后返回；逐次求解不创建或回收线程。
-- `setLimits()`、`SetSolveType()`、查询和析构均不得与同一实例的求解并发。空闲时更新限位会替换求解器，复用原有工作线程。
+- `setLimits()`、`SetSolveType()`、`setRandomSeed()`、线程配置、查询和析构均不得与同一实例的求解并发。空闲时更新限位会替换求解器，复用原有工作线程。
 - 构造、预热、配置和析构应放在控制循环之外。析构前停止提交任务并等待当前调用返回；工作线程在析构时退出并被回收。
 - 新版改变了类的对象布局，升级后需要重新编译调用方。意外工作线程异常在本轮两个线程结束后传播给调用方；正常无解仍返回负值。
 
@@ -256,6 +302,8 @@ pinocchio::forwardKinematics(model, data, q);
 阶段 C 使用实例内独立的随机引擎，构造时播种。可在空闲时调用 `setRandomSeed(uint64_t)` 重置四条独立随机序列（两个工作线程的外层重启，以及两个底层求解器的重启）；独立 Newton/NLopt 也提供该方法。`setLimits()` 保留随机状态。固定种子使每条序列可复现，线程调度和时间截止仍会影响最终候选，不能保证并行结果逐位一致。`Manip*` 评分使用每线程独立工作区并在结果锁外执行，NLopt 前向差分使用正确分母和双精度扰动步长。升级后需重新编译客户端。
 
 [阶段 C 验证报告](docs/REALTIME_IK_STAGE_C_VALIDATION.md)包含与 B、A、KDL TRAC-IK 的对比。6R 独立 NLopt 的短预算成功率提高，但完整调用没有在所有场景下一致加速；负载下仍可因工作线程晚开始而超过 1 ms。
+
+阶段 D1 增加上文的显式工作线程配置接口及下文的验证工具，保持同步双求解器行为。本机测试结果见 [阶段 D1 记录](docs/REALTIME_IK_STAGE_D_VALIDATION.md)；目标机器的实时验收尚未执行。
 
 ## 测试与诊断
 
@@ -268,7 +316,45 @@ ctest --test-dir build --output-on-failure
 | 用例 | 内容 |
 | --- | --- |
 | `cpp_standalone` | 五种求解模式、连续关节与跨 ±π、非根 base、非法参数、超时 |
+| `persistent_workers` | 常驻线程生命周期、任务同步与连续调用 |
+| `solver_deadlines` | 共享截止时间、取消与异常传播 |
+| `numerical_gradients` / `optimization_regressions` | 数值差分、随机状态与求解回归 |
+| `worker_thread_configuration` | 工作线程配置、读回、参数拒绝与生命周期 |
+| `worker_thread_realtime` / `worker_thread_permission` | Linux 实时策略生效与真实权限拒绝 |
+| `worker_thread_unsupported` | 在 Linux 上模拟不支持平台分支 |
 | `example_random_ik` | 100 个固定随机种子目标，校验 FK 残差与关节限位 |
+
+实时策略或权限拒绝测试不满足运行条件时明确跳过；跳过不代表该项已验证。
+
+### 阶段 D 线程配置基准（可选）
+
+以下命令从仓库根目录执行，先按快速开始构建 `build`，保留 `BUILD_TESTING=ON` 以生成诊断工具所需的测试支持库。`IK_ENABLE_THREAD_CONFIG_BENCHMARKS` 属于 **`tests/benchmark` 独立 CMake 工程**，默认 `OFF`，仅 Linux 的 PIN 后端提供这两个目标：
+
+```bash
+cmake -S tests/benchmark -B build/stage-d-bench -DCMAKE_BUILD_TYPE=Release \
+  -DIK_SOURCE_DIR="$PWD" -DIK_BUILD_DIR="$PWD/build" \
+  -DIK_ENABLE_THREAD_CONFIG_BENCHMARKS=ON
+cmake --build build/stage-d-bench --target stage_d_benchmark stage_d_timing_probe -j2
+
+python3 tests/benchmark/stage_d_compare.py \
+  --executable build/stage-d-bench/stage_d_benchmark \
+  --config default=tests/benchmark/threads-default.conf \
+  --output /tmp/ik-d-default --samples 10000 --timeout 0.00055 --rounds 2
+```
+
+依赖不在默认路径时，同样传入 `CMAKE_PREFIX_PATH`。输出目录必须尚不存在。默认配置保持三个线程的原设置；可增加 `--config affinity=/path/to/affinity.conf` 比较多组设置，配置名称仅使用英文字母、数字、下划线或连字符。配置文件每行四列（角色、CPU 列表、调度策略、优先级），必须包含 `caller`、`newton`、`nlopt` 三行：
+
+```text
+caller - keep -
+newton - keep -
+nlopt  - keep -
+```
+
+CPU 列支持逗号分隔编号或 `-`（保持）；策略为 `keep` / `other` / `fifo` / `rr`，优先级分别为 `-` / `0` / 合法实时优先级。基准工具可额外配置自身调用线程，并在测量后恢复；库接口本身只配置两个工作线程。工具保存输入哈希、实际线程设置及延迟统计，权限不足会明确记录为不可用。`stage_d_benchmark` 测生产库，`stage_d_timing_probe` 用于分段诊断。详细格式及失败检查见 [基准工具说明](tests/benchmark/README.md#阶段-d1-线程配置验证)。
+
+当前仅完成本机接口和工具验证，目标控制器的 CPU、优先级及 1000 Hz 整机实时验收仍待确定和执行。
+
+### 手动诊断
 
 手动诊断程序（默认不构建，需显式指定 target）：
 
@@ -309,6 +395,10 @@ export LD_LIBRARY_PATH=/opt/openrobots/lib:$LD_LIBRARY_PATH
 **升级依赖版本后构建失败**
 
 更换 Pinocchio 版本后请使用全新的构建目录（`rm -rf build`），避免复用旧版本的 CMake 缓存。
+
+**线程配置失败或读回不一致**
+
+检查 `std::system_error::code()`：`EPERM` / `EACCES` 通常需要检查运行账户的实时调度权限及 `RLIMIT_RTPRIO`；亲和性错误需核对在线 CPU、cpuset 和进程可用 CPU。系统可能接受请求但缩减 CPU 集合，应以读回结果为准。非 Linux 的这些接口返回不支持。部署权限和资源分配由控制器管理员确定，库不会静默降级或自行提权。
 
 ## 文档
 

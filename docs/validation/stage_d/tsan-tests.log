@@ -1,0 +1,52 @@
+Internal ctest changing into directory: /tmp/pin-ik-stage-d/tsan
+UpdateCTestConfiguration  from :/tmp/pin-ik-stage-d/tsan/DartConfiguration.tcl
+Parse Config file:/tmp/pin-ik-stage-d/tsan/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/tmp/pin-ik-stage-d/tsan/DartConfiguration.tcl
+Parse Config file:/tmp/pin-ik-stage-d/tsan/DartConfiguration.tcl
+Test project /tmp/pin-ik-stage-d/tsan
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 6
+    Start 6: worker_thread_configuration
+
+6: Test command: /tmp/pin-ik-stage-d/tsan/tests/worker_thread_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+6: Test timeout computed to be: 60
+6: Worker settings, native readback, invalid requests, 1000 solves, limits, IDs and restore passed
+1/4 Test #6: worker_thread_configuration ......   Passed    0.07 sec
+test 7
+    Start 7: worker_thread_realtime
+
+7: Test command: /tmp/pin-ik-stage-d/tsan/tests/worker_thread_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf" "--realtime"
+7: Test timeout computed to be: 60
+7: FIFO/RR priority 1 applied and read back on both workers
+7: Worker settings, native readback, invalid requests, 1000 solves, limits, IDs and restore passed
+2/4 Test #7: worker_thread_realtime ...........   Passed    0.07 sec
+test 8
+    Start 8: worker_thread_permission
+
+8: Test command: /tmp/pin-ik-stage-d/tsan/tests/worker_thread_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf" "--deny-realtime"
+8: Test timeout computed to be: 60
+8: Real kernel EPERM reported; previous explicit affinity retained
+8: Worker settings, native readback, invalid requests, 1000 solves, limits, IDs and restore passed
+3/4 Test #8: worker_thread_permission .........   Passed    0.06 sec
+test 9
+    Start 9: worker_thread_unsupported
+
+9: Test command: /tmp/pin-ik-stage-d/tsan/tests/worker_thread_unsupported_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+9: Test timeout computed to be: 1500
+9: All unsupported operations reported ENOTSUP
+4/4 Test #9: worker_thread_unsupported ........   Passed    0.02 sec
+
+The following tests passed:
+	worker_thread_configuration
+	worker_thread_realtime
+	worker_thread_permission
+	worker_thread_unsupported
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =   0.21 sec

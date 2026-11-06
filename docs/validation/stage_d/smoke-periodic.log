@@ -1,0 +1,8 @@
+default 1 measured success= 1000 max_us= 1230.672
+affinity 1 measured success= 991 max_us= 4547.288
+fifo 1 measured success= 1000 max_us= 457.375
+combined 1 measured success= 1000 max_us= 314.347
+combined 2 measured success= 1000 max_us= 362.076
+fifo 2 measured success= 1000 max_us= 328.152
+affinity 2 measured success= 998 max_us= 1188.459
+default 2 measured success= 1000 max_us= 772.888

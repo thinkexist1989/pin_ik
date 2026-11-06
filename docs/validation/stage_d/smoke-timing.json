@@ -1,0 +1,152 @@
+[
+  {
+    "round": 1,
+    "config": "combined",
+    "command": [
+      "/tmp/pin-ik-stage-d/bench/stage_d_timing_probe",
+      "/tmp/pin-ik-stage-d/smoke-timing/round1_combined.csv",
+      "1000",
+      "0.00055",
+      "0",
+      "smooth",
+      "arm6",
+      "1000",
+      "/tmp/pin-ik-stage-d/smoke-timing/combined.conf"
+    ],
+    "return_code": 0,
+    "status": "measured",
+    "samples": 1000,
+    "success": 1000,
+    "mean_us": 193.811541,
+    "p50_us": 197.717,
+    "p95_us": 294.531,
+    "p99_us": 312.605,
+    "p999_us": 355.884,
+    "max_us": 365.244,
+    "over_budget": 0,
+    "over_1ms": 0,
+    "release_deadline_misses": 0,
+    "max_position_error": 9.980677217654005e-07,
+    "max_rotation_error": 6.717651280186018e-07,
+    "inputs_sha256": "9d236830ca86d16b25545ee4a7d305a279e8b7635ff1b5992f757a069bb37072",
+    "settings": {
+      "caller_restored": true,
+      "threads": {
+        "caller": {
+          "original": {
+            "cpus": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15
+            ],
+            "policy": 0,
+            "priority": 0
+          },
+          "effective": {
+            "cpus": [
+              0
+            ],
+            "policy": 1,
+            "priority": 1
+          },
+          "requested": {
+            "cpus": [
+              0
+            ],
+            "policy": 1,
+            "priority": 1
+          }
+        },
+        "newton": {
+          "original": {
+            "cpus": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15
+            ],
+            "policy": 0,
+            "priority": 0
+          },
+          "effective": {
+            "cpus": [
+              2
+            ],
+            "policy": 1,
+            "priority": 1
+          },
+          "requested": {
+            "cpus": [
+              2
+            ],
+            "policy": 1,
+            "priority": 1
+          }
+        },
+        "nlopt": {
+          "original": {
+            "cpus": [
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+              10,
+              11,
+              12,
+              13,
+              14,
+              15
+            ],
+            "policy": 0,
+            "priority": 0
+          },
+          "effective": {
+            "cpus": [
+              4
+            ],
+            "policy": 1,
+            "priority": 1
+          },
+          "requested": {
+            "cpus": [
+              4
+            ],
+            "policy": 1,
+            "priority": 1
+          }
+        }
+      }
+    }
+  }
+]

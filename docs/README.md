@@ -21,6 +21,8 @@
 - [阶段 A 实现与验证报告](REALTIME_IK_STAGE_A_VALIDATION.md)：常驻线程实现、KDL TRAC-IK 解正确性对比、平均和最大耗时及周期测试结果。
 - [阶段 B 实现与验证报告](REALTIME_IK_STAGE_B_VALIDATION.md)：绝对截止时间、取消正确性、工作区与运动学复用，以及与阶段 A 和 KDL TRAC-IK 的回归对比。
 - [阶段 C 实现与验证报告](REALTIME_IK_STAGE_C_VALIDATION.md)：独立随机状态、锁外评分、梯度修正及分项对比。
+- [阶段 D 实施方案](REALTIME_IK_STAGE_D_PLAN.md)：已确认的接口与工具范围，以及目标控制器部署待确认项。
+- [阶段 D1 接口与验证记录](REALTIME_IK_STAGE_D_VALIDATION.md)：线程配置 API、本机回归、目标控制器验证工具与验收边界。
 
 ## 连续旋转关节
 

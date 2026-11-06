@@ -13,7 +13,7 @@ find_package(Threads REQUIRED)
 
 option(PIN_IK_BUILD_EXAMPLES "Build standalone IK example" ON)
 
-add_library(pin_ik SHARED src/pinocchio_tl.cpp src/nlopt_ik.cpp src/pin_ik.cpp src/urdf.cpp)
+add_library(pin_ik SHARED src/pinocchio_tl.cpp src/nlopt_ik.cpp src/pin_ik.cpp src/urdf.cpp src/worker_thread.cpp)
 add_library(pin_ik::pin_ik ALIAS pin_ik)
 # Keep non-system dependency prefixes discoverable after installation.
 set_target_properties(pin_ik PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)

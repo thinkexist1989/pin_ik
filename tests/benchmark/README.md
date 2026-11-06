@@ -198,3 +198,59 @@ cmake --build /tmp/pin-ik-stage-c/bench-c --target timing_probe -j2
 额外列 `dispatch_to_start0/1` 包含发布、通知、锁交接和调度等待；`worker_wall0/1`、`worker_cpu0/1` 分别是每线程求解区间的墙钟和线程 CPU 时间；`first_finish_to_complete` 是第一个工作线程结束求解至两个线程都登记完成的间隔；`last_complete_to_sample` 是最后完成至调用端取样的间隔，含返回整理及包装器复制。单位均为 µs。这些区间不全互斥，不能直接相加。每线程只写自己的槽，调用端在完成屏障后读取。插桩耗时只用于定位，不能替代生产库性能结果。
 
 本次实际批次脚本保存在 `docs/validation/stage_c/run_*.py`；它们假定前述各版本构建已存在。后台负载脚本用 `finally` 终止并回收六个进程，诊断和正式测量分别运行。
+
+## 阶段 D1 线程配置验证
+
+目标控制器尚未在本次会话中测试。以下工具用于在目标机器做同条件配置对比，不会自动选择生产 CPU 或优先级；内置模型仍是 `cartesian`、`arm6` 两条测试链。实际机器人还需使用真实模型、轨迹及控制工作负载验证。
+
+构建新版本库及可选工具（历史版本不提供这些配置 API，不能混用头文件和库）：
+
+```bash
+cmake -S . -B build/stage-d -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17
+cmake --build build/stage-d -j2
+ctest --test-dir build/stage-d --output-on-failure
+cmake -S tests/benchmark -B build/stage-d-bench -DCMAKE_BUILD_TYPE=Release \
+  -DIK_SOURCE_DIR="$PWD" -DIK_BUILD_DIR="$PWD/build/stage-d" \
+  -DIK_ENABLE_THREAD_CONFIG_BENCHMARKS=ON
+cmake --build build/stage-d-bench --target stage_d_benchmark stage_d_timing_probe -j2
+```
+
+按安装位置需要时追加 `-Dpinocchio_DIR=...`。线程配置文件严格包含三个角色，每行四列；`#` 后为注释。仓库自带 `threads-default.conf` 可直接作为基线：
+
+```text
+# role   CPUs   policy   priority
+caller   -      keep     -
+newton   -      keep     -
+nlopt    -      keep     -
+```
+
+`CPUs` 为逗号分隔整数列表，`-` 表示保持；策略支持 `keep`、`other`、`fifo`、`rr`。`keep` 的优先级列必须为 `-`；`other` 为 `0`，实时策略使用系统允许范围。运行实验前按目标机器资源规划修改文件，不能照抄阶段 D 本机验证中使用的 CPU 编号和优先级。
+
+先执行原设置基线（输出目录必须不存在）：
+
+```bash
+python3 tests/benchmark/stage_d_compare.py \
+  --executable build/stage-d-bench/stage_d_benchmark \
+  --config default=tests/benchmark/threads-default.conf \
+  --output /tmp/ik-d-default --samples 10000 --timeout 0.00055 --rounds 2
+```
+
+追加 `--config affinity=/path/to/affinity.conf`、`--config scheduling=/path/to/scheduling.conf`、`--config combined=/path/to/combined.conf` 可一次比较多组。默认每 1000 µs 释放；`--period-us 0` 测紧密调用。预算、模式、模型及输入场景通过 `--timeout`、`--mode`、`--robot`、`--scenario` 显式指定。第二轮反转配置执行顺序。样本数量可改为 1,000,000，但这仍是独立基准，不是包含所有控制工作的整机验收。
+
+单次执行格式如下；末尾配置文件是相对于既有基准新增的必选参数：
+
+```bash
+build/stage-d-bench/stage_d_benchmark /tmp/ik-d.csv 10000 0.00055 0 smooth arm6 1000 tests/benchmark/threads-default.conf
+```
+
+工具在准备输入与结果缓存后设置三个线程，再预热 100 次。库仅配置两个工作线程，基准工具另外显式配置自身调用线程。设置后逐项读回，亲和性被系统缩减或策略/优先级不符均报错；不能把部分生效配置冒充指定实验。多个 setter 不构成事务，失败后本次独立进程退出并销毁工作线程；调用线程通过作用域保护恢复，正常路径还核对恢复结果。它不修改系统级实时配额、隔离 CPU、电源设置或其他进程。
+
+输出 CSV 外另有 `.threads.json`，记录三线程的原始值、请求值、实际值以及调用线程恢复状态。`stage_d_compare.py` 保存配置副本、输入哈希和全部成功/失败状态；权限不足时记为 `unavailable`，进程返回 77，批次返回非零，不能算作通过。没有权限时应由控制器管理员按部署政策配置，工具不自行提权。
+
+使用 `stage_d_timing_probe` 替换 executable 可记录与阶段 C 相同的分段指标，输出与正式测量分别保存，避免用插桩耗时替代生产库耗时。失败行为检查：
+
+```bash
+python3 tests/benchmark/stage_d_tool_tests.py --executable build/stage-d-bench/stage_d_benchmark
+```
+
+CTest 的实时能力测试若被系统拒绝会明确跳过；权限拒绝测试在独立测试进程中限制自身 `RLIMIT_RTPRIO`，若进程具有可绕过该限制的 `CAP_SYS_NICE` 则明确跳过该项。`worker_thread_unsupported` 在 Linux 上模拟不支持平台分支。跳过不能作为该能力已验证的证据。

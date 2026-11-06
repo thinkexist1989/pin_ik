@@ -1,0 +1,16 @@
+[
+  {
+    "case": "bad-policy",
+    "status": "passed",
+    "error": "keep requires priority '-'"
+  },
+  {
+    "case": "filtered-mask",
+    "status": "passed",
+    "error": "newton: requested settings differ from OS readback"
+  },
+  {
+    "case": "permission-matrix",
+    "status": "passed"
+  }
+]
