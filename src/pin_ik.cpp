@@ -49,7 +49,6 @@ PIN_IK::PIN_IK(const std::string& base, const std::string& tip, const std::strin
   initialized(false), eps(tolerance), maxtime(timeout), solvetype(type)
 {
   loadURDFModel(xml, base, tip, model, lb, ub, tip_frame_id);
-  data.reset(new pinocchio::Data(model));
   initialize();
   startWorkers();
 }
@@ -66,7 +65,6 @@ PIN_IK::PIN_IK(const pinocchio::Model& _model, const Eigen::VectorXd& _q_min,
   maxtime(_maxtime),
   solvetype(_type)
 {
-  data.reset(new pinocchio::Data(model));
   initialize();
   startWorkers();
 }
@@ -84,6 +82,7 @@ void PIN_IK::initialize()
     throw std::invalid_argument("Invalid tip frame");
 
   resetSolvers();
+  for (auto& workspace : scoring) workspace = std::make_unique<ScoreWorkspace>(model);
 
   types = ::PIN_IK::jointTypes(model);
 
@@ -99,12 +98,23 @@ bool PIN_IK::setLimits(Eigen::VectorXd& lb_, Eigen::VectorXd& ub_)
       model, new_lb, new_ub, tip_frame_id, maxtime, eps, NLOPT_IK::SumSq);
   auto new_ik = std::make_unique<ChainIkSolverPos_TL>(
       model, new_lb, new_ub, tip_frame_id, maxtime, eps, true, true);
+  new_nl->random = nl_solver->random;
+  new_ik->random = iksolver->random;
   std::lock_guard<std::mutex> lock(worker_mutex);
   lb.swap(new_lb);
   ub.swap(new_ub);
   nl_solver.swap(new_nl);
   iksolver.swap(new_ik);
   return true;
+}
+
+void PIN_IK::setRandomSeed(std::uint64_t seed)
+{
+  // Distinct deterministic streams; no process-global state or hot-path entropy.
+  random[0].seed(seed);
+  random[1].seed(seed ^ UINT64_C(0x9e3779b97f4a7c15));
+  iksolver->setRandomSeed(seed ^ UINT64_C(0xbf58476d1ce4e5b9));
+  nl_solver->setRandomSeed(seed ^ UINT64_C(0x94d049bb133111eb));
 }
 
 #ifdef PIN_IK_TESTING
@@ -252,9 +262,16 @@ bool PIN_IK::runSolver(T1& solver, T2& other_solver,
         normalize_seed(q_init, q_out);
         break;
       }
+#ifdef PIN_IK_TESTING
+      if (test_hook) test_hook(*this, "before_score", index);
+#endif
+      const double err = scoreSolution(q_init, q_out, index);
+#ifdef PIN_IK_TESTING
+      if (test_hook) test_hook(*this, "after_score", index);
+#endif
       std::lock_guard<std::mutex> lock(mtx_);
 #ifdef PIN_IK_TESTING
-      if (test_hook) test_hook(*this, "before_result", 0);
+      if (test_hook) test_hook(*this, "before_result", index);
 #endif
       if (unique_solution(q_out))
       {
@@ -268,28 +285,6 @@ bool PIN_IK::runSolver(T1& solver, T2& other_solver,
         }
         uint curr_size = solutions.size();
         errors.resize(curr_size);
-        double err, penalty, manip_value;
-        switch (solvetype)
-        {
-        case Manip1:
-          penalty = manipPenalty(q_out);
-          manip_value = PIN_IK::manipValue1(q_out);
-          err = penalty * manip_value;
-          break;
-        case Manip2:
-          penalty = manipPenalty(q_out);
-          manip_value = PIN_IK::manipValue2(q_out);
-          err = penalty * manip_value;
-          break;
-        case Manip3:
-          penalty = manipPenalty(q_out);
-          manip_value = PIN_IK::manipValue3(q_out);
-          err = penalty * manip_value;
-          break;
-        default:
-          err = PIN_IK::JointErr(q_init, q_out);
-          break;
-        }
         errors[curr_size - 1] = std::make_pair(err, curr_size - 1);
       }
     }
@@ -302,9 +297,9 @@ bool PIN_IK::runSolver(T1& solver, T2& other_solver,
     if (solver.aborted || std::chrono::steady_clock::now() >= deadline) break;
     for (int j = 0; j < seed.size(); j++)
       if (types[j] == Continuous)
-        seed(j) = fRand(q_init(j) - 2 * M_PI, q_init(j) + 2 * M_PI);
+        seed(j) = random[index].uniform(q_init(j) - 2 * M_PI, q_init(j) + 2 * M_PI);
       else
-        seed(j) = fRand(lb(j), ub(j));
+        seed(j) = random[index].uniform(lb(j), ub(j));
   }
 #ifdef PIN_IK_TESTING
   if (test_hook) test_hook(*this, "before_cancel", index);
@@ -379,39 +374,22 @@ double PIN_IK::manipPenalty(const Eigen::VectorXd& arr)
   return std::max(0.0, 1.0 - exp(-1 * penalty));
 }
 
-double PIN_IK::manipValue1(const Eigen::VectorXd& arr)
+double PIN_IK::scoreSolution(const Eigen::VectorXd& seed, const Eigen::VectorXd& arr, unsigned index)
 {
-  Eigen::VectorXd singular_values = computeSingularValues(arr);
-
-  double error = 1.0;
-  for (int i = 0; i < singular_values.size(); ++i)
-    error *= singular_values(i);
-  return error;
-}
-
-double PIN_IK::manipValue2(const Eigen::VectorXd& arr)
-{
-  Eigen::VectorXd singular_values = computeSingularValues(arr);
-  return singular_values.minCoeff() / singular_values.maxCoeff();
-}
-
-double PIN_IK::manipValue3(const Eigen::VectorXd& arr)
-{
-  Eigen::VectorXd singular_values = computeSingularValues(arr);
-  return singular_values.minCoeff();
-}
-
-Eigen::VectorXd PIN_IK::computeSingularValues(const Eigen::VectorXd& arr)
-{
-  pinocchio::Data::Matrix6x J(6, model.nv);
-  J.setZero();
-
-  pinocchio::forwardKinematics(model, *data, ::PIN_IK::toPinocchioConfiguration(model, arr));
-  pinocchio::computeFrameJacobian(model, *data, ::PIN_IK::toPinocchioConfiguration(model, arr), tip_frame_id,
-                                   pinocchio::LOCAL_WORLD_ALIGNED, J);
-
-  Eigen::JacobiSVD<Eigen::MatrixXd> svdsolver(J);
-  return svdsolver.singularValues();
+  if (solvetype != Manip1 && solvetype != Manip2 && solvetype != Manip3)
+    return JointErr(seed, arr);
+  auto& workspace = *scoring[index];
+  toPinocchioConfiguration(model, arr, workspace.configuration);
+  workspace.jacobian.setZero();
+  pinocchio::forwardKinematics(model, workspace.data, workspace.configuration);
+  pinocchio::computeFrameJacobian(model, workspace.data, workspace.configuration, tip_frame_id,
+                                  pinocchio::LOCAL_WORLD_ALIGNED, workspace.jacobian);
+  workspace.svd.compute(workspace.jacobian);
+  const auto& singular_values = workspace.svd.singularValues();
+  double value = singular_values.minCoeff();
+  if (solvetype == Manip1) value = singular_values.prod();
+  else if (solvetype == Manip2) value /= singular_values.maxCoeff();
+  return manipPenalty(arr) * value;
 }
 
 int PIN_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,

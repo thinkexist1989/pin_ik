@@ -79,6 +79,10 @@ struct Robot {
   }
 };
 
+template<class T>
+auto seedSolver(T& solver, int) -> decltype(solver.setRandomSeed(42), void()) { solver.setRandomSeed(42); }
+template<class T> void seedSolver(T&, long) {}
+
 struct Solver {
 #ifdef BENCH_KDL
   TRAC_IK::TRAC_IK solver;
@@ -156,6 +160,7 @@ int main(int argc, char** argv) {
     Robot robot(argv[6]);
     Solver solver(robot, timeout, mode);
     std::srand(42);
+    seedSolver(solver.solver, 0);
     std::mt19937 rng(42);
     std::uniform_real_distribution<double> random(-.7,.7);
     struct Case { Joints seed; Pose target; };

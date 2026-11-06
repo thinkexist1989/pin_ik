@@ -1,0 +1,24 @@
+--- a/src/nlopt_ik.cpp
++++ b/src/nlopt_ik.cpp
+@@ -99,7 +99,9 @@
+   (this->*error)(values, &result);
+   if (stopCallback() || !grad) return result;
+   perturbation = values;
+-  const double jump = FLT_EPSILON;
++  // Double-precision forward differences need a smaller step than FLT_EPSILON:
++  // the latter's first-order bias can prevent convergence at eps=1e-7.
++  const double jump = std::sqrt(std::numeric_limits<double>::epsilon());
+   for (size_t i = 0; i < values.size(); ++i) {
+     if (stopCallback()) break;
+     perturbation[i] += jump;
+@@ -107,8 +109,8 @@
+     (this->*error)(perturbation, &perturbed);
+     perturbation[i] = values[i];
+     if (stopCallback()) break;
+-    // Keep the legacy gradient scale; correcting it is a separate stage C change.
+-    grad[i] = (perturbed - result) / (2.0 * jump);
++    // Forward difference: the numerator contains one step, not two.
++    grad[i] = (perturbed - result) / jump;
+   }
+   return result;
+ }

@@ -1,0 +1,11 @@
+cmake_minimum_required(VERSION 3.16)
+project(ik_stage_c_probes LANGUAGES CXX)
+find_package(pinocchio REQUIRED)
+find_package(NLopt REQUIRED)
+find_package(Threads REQUIRED)
+add_executable(gradient_probe ../../gradient_tests.cpp)
+target_compile_features(gradient_probe PRIVATE cxx_std_17)
+target_compile_definitions(gradient_probe PRIVATE PIN_IK_TESTING)
+target_include_directories(gradient_probe PRIVATE ${IK_SOURCE_DIR}/include)
+target_link_libraries(gradient_probe PRIVATE ${IK_BUILD_DIR}/tests/libpin_ik_worker_test_support.a
+  pinocchio::pinocchio ${NLOPT_LIBRARIES} Threads::Threads)

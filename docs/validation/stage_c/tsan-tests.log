@@ -1,0 +1,14 @@
+Internal ctest changing into directory: /tmp/pin-ik-stage-c/tsan
+Test project /tmp/pin-ik-stage-c/tsan
+    Start 2: persistent_workers
+1/4 Test #2: persistent_workers ...............   Passed   11.18 sec
+    Start 3: solver_deadlines
+2/4 Test #3: solver_deadlines .................   Passed    2.01 sec
+    Start 4: numerical_gradients
+3/4 Test #4: numerical_gradients ..............   Passed    0.14 sec
+    Start 5: optimization_regressions
+4/4 Test #5: optimization_regressions .........   Passed    0.19 sec
+
+100% tests passed, 0 tests failed out of 4
+
+Total Test time (real) =  13.52 sec

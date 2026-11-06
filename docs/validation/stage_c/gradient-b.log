@@ -1,0 +1,4 @@
+type=2 samples=150 max_normalized_error=0.418942 mean_gradient_scale=0.5
+type=3 samples=150 max_normalized_error=0.28679 mean_gradient_scale=0.5
+type=1 samples=150 max_normalized_error=0.259856 mean_gradient_scale=0.5
+type=0 samples=150 max_normalized_error=0.422373 mean_gradient_scale=0.5

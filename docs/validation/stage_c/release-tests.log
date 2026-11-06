@@ -1,0 +1,70 @@
+Internal ctest changing into directory: /tmp/pin-ik-stage-c/release
+UpdateCTestConfiguration  from :/tmp/pin-ik-stage-c/release/DartConfiguration.tcl
+Parse Config file:/tmp/pin-ik-stage-c/release/DartConfiguration.tcl
+UpdateCTestConfiguration  from :/tmp/pin-ik-stage-c/release/DartConfiguration.tcl
+Parse Config file:/tmp/pin-ik-stage-c/release/DartConfiguration.tcl
+Test project /tmp/pin-ik-stage-c/release
+Constructing a list of tests
+Done constructing a list of tests
+Updating test list for fixtures
+Added 0 tests to meet fixture requirements
+Checking test dependency graph...
+Checking test dependency graph end
+test 1
+    Start 1: cpp_standalone
+
+1: Test command: /tmp/pin-ik-stage-c/release/tests/standalone_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+1: Test timeout computed to be: 1500
+1: Error:   Error document empty.
+1:          at line 100 in ./urdf_parser/src/model.cpp
+1: All five solve modes, 100 6R targets, analytic FK, limits, invalid inputs and timeout passed
+1/6 Test #1: cpp_standalone ...................   Passed    0.17 sec
+test 2
+    Start 2: persistent_workers
+
+2: Test command: /tmp/pin-ik-stage-c/release/tests/worker_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+2: Test timeout computed to be: 180
+2: Worker lifecycle, gated scheduling, rollback, exceptions, modes, limits, 100000 mixed calls and parallel instances passed
+2/6 Test #2: persistent_workers ...............   Passed    3.11 sec
+test 3
+    Start 3: solver_deadlines
+
+3: Test command: /tmp/pin-ik-stage-c/release/tests/solver_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+3: Test timeout computed to be: 60
+3: deadline_tail calls=1000 mean_us=9.02004 max_us=465.141 cancel_to_complete_max_us=464.693
+3: kinematics branched=0 path=0 mean_us=0.408285 max_derivative_error=1.36263e-08
+3: kinematics branched=0 path=1 mean_us=0.266896 max_derivative_error=1.36263e-08
+3: kinematics branched=0 path=2 mean_us=0.283739 max_derivative_error=1.36263e-08
+3: kinematics branched=1 path=0 mean_us=0.542665 max_derivative_error=1.36263e-08
+3: kinematics branched=1 path=1 mean_us=0.631131 max_derivative_error=1.36263e-08
+3: kinematics branched=1 path=2 mean_us=0.593618 max_derivative_error=1.36263e-08
+3: Deadline, cancellation, callback outputs, exception recovery and kinematics passed
+3/6 Test #3: solver_deadlines .................   Passed    0.71 sec
+test 4
+    Start 4: numerical_gradients
+
+4: Test command: /tmp/pin-ik-stage-c/release/tests/gradient_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+4: Test timeout computed to be: 1500
+4: type=2 samples=150 max_normalized_error=4.48774e-08 mean_gradient_scale=1
+4: type=3 samples=150 max_normalized_error=2.99103e-08 mean_gradient_scale=1
+4: type=1 samples=150 max_normalized_error=3.27142e-07 mean_gradient_scale=1
+4: type=0 samples=150 max_normalized_error=5.10399e-08 mean_gradient_scale=1
+4/6 Test #4: numerical_gradients ..............   Passed    0.02 sec
+test 5
+    Start 5: optimization_regressions
+
+5: Test command: /tmp/pin-ik-stage-c/release/tests/optimization_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf"
+5: Test timeout computed to be: 60
+5: Independent random streams, reseeding, limits, concurrent scoring and candidate scores passed
+5/6 Test #5: optimization_regressions .........   Passed    0.15 sec
+test 6
+    Start 6: example_random_ik
+
+6: Test command: /tmp/pin-ik-stage-c/release/examples/ik_tests "/home/think/Documents/GitHub/pin_ik/tests/robot.urdf" "base" "tip" "100"
+6: Test timeout computed to be: 1500
+6: Solved 100/100; FK tolerance 1e-4; joint limits checked
+6/6 Test #6: example_random_ik ................   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 6
+
+Total Test time (real) =   4.19 sec

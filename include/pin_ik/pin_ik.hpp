@@ -45,6 +45,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdint>
 #include <exception>
 #include <array>
+#include <Eigen/SVD>
 
 namespace PIN_IK
 {
@@ -90,6 +91,9 @@ public:
 
   // Configuration changes and queries must not overlap a solve on this instance.
   bool setLimits(Eigen::VectorXd& lb_, Eigen::VectorXd& ub_);
+  // Reseed independent worker/solver streams while idle. Scheduling can still
+  // change which valid solution wins a parallel solve.
+  void setRandomSeed(std::uint64_t seed);
 
   static double JointErr(const Eigen::VectorXd& arr1, const Eigen::VectorXd& arr2)
   {
@@ -113,7 +117,15 @@ public:
 private:
   bool initialized;
   pinocchio::Model model;
-  std::unique_ptr<pinocchio::Data> data;
+  struct ScoreWorkspace {
+    explicit ScoreWorkspace(const pinocchio::Model& model)
+      : data(model), configuration(model.nq), jacobian(6, model.nv), svd(6, model.nv) {}
+    pinocchio::Data data;
+    Eigen::VectorXd configuration;
+    pinocchio::Data::Matrix6x jacobian;
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd;
+  };
+  std::array<std::unique_ptr<ScoreWorkspace>, 2> scoring;
   pinocchio::FrameIndex tip_frame_id;
   Eigen::VectorXd lb, ub;
   double eps;
@@ -167,18 +179,10 @@ private:
 
   bool unique_solution(const Eigen::VectorXd& sol);
 
-  inline static double fRand(double min, double max)
-  {
-    double f = (double)rand() / RAND_MAX;
-    return min + f * (max - min);
-  }
+  std::array<detail::RandomGenerator, 2> random;
 
   double manipPenalty(const Eigen::VectorXd& arr);
-  double manipValue1(const Eigen::VectorXd& arr);
-  double manipValue2(const Eigen::VectorXd& arr);
-  double manipValue3(const Eigen::VectorXd& arr);
-
-  Eigen::VectorXd computeSingularValues(const Eigen::VectorXd& arr);
+  double scoreSolution(const Eigen::VectorXd& seed, const Eigen::VectorXd& arr, unsigned index);
 
   inline bool myEqual(const Eigen::VectorXd& a, const Eigen::VectorXd& b, const double eps=1e-4)
   {

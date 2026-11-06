@@ -38,6 +38,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <pin_ik/pinocchio_types.hpp>
 #include <nlopt.hpp>
 #include <memory>
+#include <pin_ik/random.hpp>
 
 struct dual_quaternion;
 
@@ -73,6 +74,9 @@ public:
   {
     maxtime = t;
   }
+
+  // Call only while idle; affects subsequent random restarts.
+  void setRandomSeed(std::uint64_t seed) { random.seed(seed); }
 
 private:
   friend double minfuncDQ(const std::vector<double>&, std::vector<double>&, void*);
@@ -139,10 +143,10 @@ private:
 
   pinocchio::Motion bounds;
 
-  inline static double fRand(double min, double max)
+  PIN_IK::detail::RandomGenerator random;
+  inline double fRand(double min, double max)
   {
-    double f = (double)rand() / RAND_MAX;
-    return min + f * (max - min);
+    return random.uniform(min, max);
   }
 };
 

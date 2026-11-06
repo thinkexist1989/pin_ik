@@ -20,6 +20,14 @@ elseif(IK_BACKEND STREQUAL "PIN")
   target_include_directories(ik_benchmark PRIVATE ${IK_SOURCE_DIR}/include)
   find_library(IK_LIBRARY pin_ik PATHS ${IK_BUILD_DIR} NO_DEFAULT_PATH REQUIRED)
   target_link_libraries(ik_benchmark PRIVATE ${IK_LIBRARY} pinocchio::pinocchio)
+  add_executable(stage_c_probe stage_c_probe.cpp)
+  target_compile_features(stage_c_probe PRIVATE cxx_std_17)
+  # Diagnostic executable and its support library use the same test-enabled
+  # class definitions. Formal timing remains on the production ik_benchmark.
+  target_compile_definitions(stage_c_probe PRIVATE PIN_IK_TESTING)
+  target_include_directories(stage_c_probe PRIVATE ${IK_SOURCE_DIR}/include)
+  target_link_libraries(stage_c_probe PRIVATE ${IK_BUILD_DIR}/tests/libpin_ik_worker_test_support.a
+    pinocchio::pinocchio ${NLOPT_LIBRARIES} Threads::Threads)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     add_library(allocation_counter SHARED allocation_counter.cpp)
     add_executable(allocation_probe allocation_probe.cpp)

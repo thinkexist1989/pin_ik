@@ -174,6 +174,7 @@ int main(int argc, char** argv) {
 
     for (auto type : {NLOPT_IK::SumSq, NLOPT_IK::L2, NLOPT_IK::DualQuat, NLOPT_IK::Joint}) {
       NLOPT_IK::NLOPT_IK solver(model, lo, hi, tip, .1, 1e-7, type);
+      solver.setRandomSeed(42);
       // Initialize all mode-specific state, then test each callback exit explicitly.
       require(solver.CartToJnt(q, target, out) > 0, "NLopt exact solve failed");
       verify(model, data, tip, out, target);
@@ -215,8 +216,9 @@ int main(int argc, char** argv) {
         auto seed = desired;
         seed[0] += .01; seed[3] -= .01;
         const auto goal = fk(model, data, tip, desired);
-        require(solver.CartToJnt(seed, goal, out, pinocchio::Motion::Zero(), desired) > 0,
-                "NLopt perturbed-seed solve failed");
+        if (solver.CartToJnt(seed, goal, out, pinocchio::Motion::Zero(), desired) <= 0)
+          throw std::runtime_error("NLopt perturbed-seed solve failed: type=" + std::to_string(type) +
+                                   " sample=" + std::to_string(sample));
         verify(model, data, tip, out, goal);
         for (int j = 0; j < model.nv; ++j)
           require(out[j] >= lo[j]-1e-8 && out[j] <= hi[j]+1e-8, "NLopt limit violation");

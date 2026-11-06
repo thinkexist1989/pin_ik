@@ -38,6 +38,7 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <memory>
 #include <Eigen/QR>
+#include <pin_ik/random.hpp>
 
 namespace PIN_IK
 {
@@ -66,6 +67,9 @@ public:
   {
     maxtime = t;
   }
+
+  // Call only while idle; affects subsequent random restarts.
+  void setRandomSeed(std::uint64_t seed) { random.seed(seed); }
 
 private:
   int CartToJntUntil(const Eigen::VectorXd& q_init, const pinocchio::SE3& p_in,
@@ -111,10 +115,10 @@ private:
   pinocchio::SE3 f;
   pinocchio::Motion delta_twist;
 
-  inline static double fRand(double min, double max)
+  detail::RandomGenerator random;
+  inline double fRand(double min, double max)
   {
-    double f = (double)rand() / RAND_MAX;
-    return min + f * (max - min);
+    return random.uniform(min, max);
   }
 };
 

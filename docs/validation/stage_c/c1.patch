@@ -1,0 +1,161 @@
+--- a/include/pin_ik/nlopt_ik.hpp
++++ b/include/pin_ik/nlopt_ik.hpp
+@@ -38,6 +38,7 @@
+ #include <pin_ik/pinocchio_types.hpp>
+ #include <nlopt.hpp>
+ #include <memory>
++#include <pin_ik/random.hpp>
+ 
+ struct dual_quaternion;
+ 
+@@ -73,6 +74,9 @@
+   {
+     maxtime = t;
+   }
++
++  // Call only while idle; affects subsequent random restarts.
++  void setRandomSeed(std::uint64_t seed) { random.seed(seed); }
+ 
+ private:
+   friend double minfuncDQ(const std::vector<double>&, std::vector<double>&, void*);
+@@ -139,10 +143,10 @@
+ 
+   pinocchio::Motion bounds;
+ 
+-  inline static double fRand(double min, double max)
++  PIN_IK::detail::RandomGenerator random;
++  inline double fRand(double min, double max)
+   {
+-    double f = (double)rand() / RAND_MAX;
+-    return min + f * (max - min);
++    return random.uniform(min, max);
+   }
+ };
+ 
+--- a/include/pin_ik/pin_ik.hpp
++++ b/include/pin_ik/pin_ik.hpp
+@@ -90,6 +90,9 @@
+ 
+   // Configuration changes and queries must not overlap a solve on this instance.
+   bool setLimits(Eigen::VectorXd& lb_, Eigen::VectorXd& ub_);
++  // Reseed independent worker/solver streams while idle. Scheduling can still
++  // change which valid solution wins a parallel solve.
++  void setRandomSeed(std::uint64_t seed);
+ 
+   static double JointErr(const Eigen::VectorXd& arr1, const Eigen::VectorXd& arr2)
+   {
+@@ -167,11 +170,7 @@
+ 
+   bool unique_solution(const Eigen::VectorXd& sol);
+ 
+-  inline static double fRand(double min, double max)
+-  {
+-    double f = (double)rand() / RAND_MAX;
+-    return min + f * (max - min);
+-  }
++  std::array<detail::RandomGenerator, 2> random;
+ 
+   double manipPenalty(const Eigen::VectorXd& arr);
+   double manipValue1(const Eigen::VectorXd& arr);
+--- a/include/pin_ik/pinocchio_tl.hpp
++++ b/include/pin_ik/pinocchio_tl.hpp
+@@ -38,6 +38,7 @@
+ #include <iostream>
+ #include <memory>
+ #include <Eigen/QR>
++#include <pin_ik/random.hpp>
+ 
+ namespace PIN_IK
+ {
+@@ -66,6 +67,9 @@
+   {
+     maxtime = t;
+   }
++
++  // Call only while idle; affects subsequent random restarts.
++  void setRandomSeed(std::uint64_t seed) { random.seed(seed); }
+ 
+ private:
+   int CartToJntUntil(const Eigen::VectorXd& q_init, const pinocchio::SE3& p_in,
+@@ -111,10 +115,10 @@
+   pinocchio::SE3 f;
+   pinocchio::Motion delta_twist;
+ 
+-  inline static double fRand(double min, double max)
++  detail::RandomGenerator random;
++  inline double fRand(double min, double max)
+   {
+-    double f = (double)rand() / RAND_MAX;
+-    return min + f * (max - min);
++    return random.uniform(min, max);
+   }
+ };
+ 
+--- /dev/null
++++ b/include/pin_ik/random.hpp
+@@ -0,0 +1,27 @@
++#ifndef PIN_IK_RANDOM_HPP
++#define PIN_IK_RANDOM_HPP
++
++#include <cstdint>
++#include <random>
++
++namespace PIN_IK { namespace detail {
++// Owned by one solver/worker. Entropy is obtained only during construction.
++class RandomGenerator {
++public:
++  RandomGenerator() : engine(initialSeed()) {}
++  explicit RandomGenerator(std::uint64_t seed) : engine(seed) {}
++  void seed(std::uint64_t value) { engine.seed(value); }
++  double uniform(double lower, double upper) {
++    const double unit = static_cast<double>(engine() >> 11) * 0x1.0p-53;
++    return lower + unit * (upper - lower);
++  }
++private:
++  static std::uint64_t initialSeed() {
++    std::random_device source;
++    return (static_cast<std::uint64_t>(source()) << 32) ^ source();
++  }
++  std::mt19937_64 engine;
++};
++}} // namespace PIN_IK::detail
++
++#endif
+--- a/src/pin_ik.cpp
++++ b/src/pin_ik.cpp
+@@ -99,12 +99,23 @@
+       model, new_lb, new_ub, tip_frame_id, maxtime, eps, NLOPT_IK::SumSq);
+   auto new_ik = std::make_unique<ChainIkSolverPos_TL>(
+       model, new_lb, new_ub, tip_frame_id, maxtime, eps, true, true);
++  new_nl->random = nl_solver->random;
++  new_ik->random = iksolver->random;
+   std::lock_guard<std::mutex> lock(worker_mutex);
+   lb.swap(new_lb);
+   ub.swap(new_ub);
+   nl_solver.swap(new_nl);
+   iksolver.swap(new_ik);
+   return true;
++}
++
++void PIN_IK::setRandomSeed(std::uint64_t seed)
++{
++  // Distinct deterministic streams; no process-global state or hot-path entropy.
++  random[0].seed(seed);
++  random[1].seed(seed ^ UINT64_C(0x9e3779b97f4a7c15));
++  iksolver->setRandomSeed(seed ^ UINT64_C(0xbf58476d1ce4e5b9));
++  nl_solver->setRandomSeed(seed ^ UINT64_C(0x94d049bb133111eb));
+ }
+ 
+ #ifdef PIN_IK_TESTING
+@@ -302,9 +313,9 @@
+     if (solver.aborted || std::chrono::steady_clock::now() >= deadline) break;
+     for (int j = 0; j < seed.size(); j++)
+       if (types[j] == Continuous)
+-        seed(j) = fRand(q_init(j) - 2 * M_PI, q_init(j) + 2 * M_PI);
++        seed(j) = random[index].uniform(q_init(j) - 2 * M_PI, q_init(j) + 2 * M_PI);
+       else
+-        seed(j) = fRand(lb(j), ub(j));
++        seed(j) = random[index].uniform(lb(j), ub(j));
+   }
+ #ifdef PIN_IK_TESTING
+   if (test_hook) test_hook(*this, "before_cancel", index);

@@ -140,3 +140,44 @@ LD_PRELOAD=/tmp/pin-ik-stage-b/bench-a/liballocation_counter.so \
 ```
 
 输出 backend 0/1/2 分别是 Newton、NLopt、双线程入口；每组预热 100 次后计数 1000 次。仅在调用区间启用全进程 `malloc/calloc/realloc` 计数，因此包含工作线程与第三方依赖的对应分配。它不覆盖自定义分配器、直接 `mmap` 或所有 aligned allocator，不证明全调用零分配。不要用 preload 下的耗时评价性能。
+
+## 阶段 C 分项比较
+
+基线为 `599c04f`。报告证据目录保存 `c1.patch`（独立随机状态）、`c2.patch`（锁外评分）、`c3.patch`（梯度修正），依次应用即可重建三个实现。补丁只包含核心 `src/` 和 `include/` 改动，测试工具使用当前仓库版本。
+
+```bash
+mkdir -p /tmp/pin-ik-stage-c/b-source
+git archive 599c04f | tar -x -C /tmp/pin-ik-stage-c/b-source
+cp -a /tmp/pin-ik-stage-c/b-source /tmp/pin-ik-stage-c/c1-source
+patch -d /tmp/pin-ik-stage-c/c1-source -p1 < docs/validation/stage_c/c1.patch
+cp -a /tmp/pin-ik-stage-c/c1-source /tmp/pin-ik-stage-c/c2-source
+patch -d /tmp/pin-ik-stage-c/c2-source -p1 < docs/validation/stage_c/c2.patch
+cp -a /tmp/pin-ik-stage-c/c2-source /tmp/pin-ik-stage-c/c-source
+patch -d /tmp/pin-ik-stage-c/c-source -p1 < docs/validation/stage_c/c3.patch
+```
+
+各版本按前文配置 Release；同时构建 `pin_ik` 和 `pin_ik_worker_test_support`。例如：
+
+```bash
+cmake -S /tmp/pin-ik-stage-c/c1-source -B /tmp/pin-ik-stage-c/c1-build -DCMAKE_BUILD_TYPE=Release -Dpinocchio_DIR=/usr/local/lib/cmake/pinocchio
+cmake --build /tmp/pin-ik-stage-c/c1-build --target pin_ik pin_ik_worker_test_support -j2
+cmake -S tests/benchmark -B /tmp/pin-ik-stage-c/bench-c1 -DCMAKE_BUILD_TYPE=Release -DIK_SOURCE_DIR=/tmp/pin-ik-stage-c/c1-source -DIK_BUILD_DIR=/tmp/pin-ik-stage-c/c1-build -Dpinocchio_DIR=/usr/local/lib/cmake/pinocchio
+cmake --build /tmp/pin-ik-stage-c/bench-c1 --target ik_benchmark stage_c_probe -j2
+```
+
+`ik_benchmark` 链接生产库，正式性能仍由 `compare.py` 执行；它在可用时调用 `setRandomSeed(42)`，旧版本仍使用 `srand(42)`。不同随机算法不承诺逐个随机数相同，目标/seed 输入序列仍逐项一致。
+
+`stage_c_probe` 链接匹配的测试支持库，比较独立 NLopt 和双线程入口，覆盖近目标 seed 与独立随机 seed，以及五种求解模式。目标/seed 来自固定生成器，每次请求前在计时区间外重置求解器种子。该工具检查每个成功输出的 FK/限位，记录候选数量、最优评分以及 NLopt 最后一次 `optimize()` 的目标函数评估次数。此计数仅统计成功请求，不等于跨随机重启的总迭代数；SLSQP 内部迭代数没有直接导出。工具包含测试钩子判断开销，其时间仅用于同条件诊断比较，不与正式计时混用。
+
+```bash
+python3 tests/benchmark/stage_c_compare.py --samples 100 --timeout 0.02 \
+  --solver b=/tmp/pin-ik-stage-c/bench-b/stage_c_probe \
+  --solver c1=/tmp/pin-ik-stage-c/bench-c1/stage_c_probe \
+  --solver c2=/tmp/pin-ik-stage-c/bench-c2/stage_c_probe \
+  --solver c=/tmp/pin-ik-stage-c/bench-c/stage_c_probe \
+  --output /tmp/pin-ik-stage-c/ablation-wide
+```
+
+短预算改为 `--timeout 0.00055`，使用独立输出目录并重复实验。正式完整调用对比将四个版本的 `ik_benchmark` 传给 `compare.py --suite performance` / `--suite periodic`。构建及 Sanitizer 检查结束后再运行计时，不混入诊断负载。
+
+`gradient_tests` 默认要求数值梯度通过；`--diagnostic` 仅输出误差供历史基线比较。`tests/benchmark/probes` 可将同一梯度测试编译链接到某个历史版本的测试支持库，通过 `IK_SOURCE_DIR`、`IK_BUILD_DIR` 指定匹配路径。

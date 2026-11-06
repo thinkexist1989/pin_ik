@@ -1,0 +1,16 @@
+Internal ctest changing into directory: /tmp/pin-ik-stage-c/asan
+Test project /tmp/pin-ik-stage-c/asan
+    Start 1: cpp_standalone
+1/5 Test #1: cpp_standalone ...................   Passed    0.32 sec
+    Start 2: persistent_workers
+2/5 Test #2: persistent_workers ...............   Passed    9.68 sec
+    Start 3: solver_deadlines
+3/5 Test #3: solver_deadlines .................   Passed    1.67 sec
+    Start 4: numerical_gradients
+4/5 Test #4: numerical_gradients ..............   Passed    0.13 sec
+    Start 5: optimization_regressions
+5/5 Test #5: optimization_regressions .........   Passed    0.21 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =  12.01 sec

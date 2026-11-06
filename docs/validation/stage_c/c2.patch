@@ -1,0 +1,169 @@
+--- a/include/pin_ik/pin_ik.hpp
++++ b/include/pin_ik/pin_ik.hpp
+@@ -45,6 +45,7 @@
+ #include <cstdint>
+ #include <exception>
+ #include <array>
++#include <Eigen/SVD>
+ 
+ namespace PIN_IK
+ {
+@@ -116,7 +117,15 @@
+ private:
+   bool initialized;
+   pinocchio::Model model;
+-  std::unique_ptr<pinocchio::Data> data;
++  struct ScoreWorkspace {
++    explicit ScoreWorkspace(const pinocchio::Model& model)
++      : data(model), configuration(model.nq), jacobian(6, model.nv), svd(6, model.nv) {}
++    pinocchio::Data data;
++    Eigen::VectorXd configuration;
++    pinocchio::Data::Matrix6x jacobian;
++    Eigen::JacobiSVD<Eigen::MatrixXd> svd;
++  };
++  std::array<std::unique_ptr<ScoreWorkspace>, 2> scoring;
+   pinocchio::FrameIndex tip_frame_id;
+   Eigen::VectorXd lb, ub;
+   double eps;
+@@ -173,11 +182,7 @@
+   std::array<detail::RandomGenerator, 2> random;
+ 
+   double manipPenalty(const Eigen::VectorXd& arr);
+-  double manipValue1(const Eigen::VectorXd& arr);
+-  double manipValue2(const Eigen::VectorXd& arr);
+-  double manipValue3(const Eigen::VectorXd& arr);
+-
+-  Eigen::VectorXd computeSingularValues(const Eigen::VectorXd& arr);
++  double scoreSolution(const Eigen::VectorXd& seed, const Eigen::VectorXd& arr, unsigned index);
+ 
+   inline bool myEqual(const Eigen::VectorXd& a, const Eigen::VectorXd& b, const double eps=1e-4)
+   {
+--- a/src/pin_ik.cpp
++++ b/src/pin_ik.cpp
+@@ -49,7 +49,6 @@
+   initialized(false), eps(tolerance), maxtime(timeout), solvetype(type)
+ {
+   loadURDFModel(xml, base, tip, model, lb, ub, tip_frame_id);
+-  data.reset(new pinocchio::Data(model));
+   initialize();
+   startWorkers();
+ }
+@@ -66,7 +65,6 @@
+   maxtime(_maxtime),
+   solvetype(_type)
+ {
+-  data.reset(new pinocchio::Data(model));
+   initialize();
+   startWorkers();
+ }
+@@ -84,6 +82,7 @@
+     throw std::invalid_argument("Invalid tip frame");
+ 
+   resetSolvers();
++  for (auto& workspace : scoring) workspace = std::make_unique<ScoreWorkspace>(model);
+ 
+   types = ::PIN_IK::jointTypes(model);
+ 
+@@ -263,9 +262,16 @@
+         normalize_seed(q_init, q_out);
+         break;
+       }
++#ifdef PIN_IK_TESTING
++      if (test_hook) test_hook(*this, "before_score", index);
++#endif
++      const double err = scoreSolution(q_init, q_out, index);
++#ifdef PIN_IK_TESTING
++      if (test_hook) test_hook(*this, "after_score", index);
++#endif
+       std::lock_guard<std::mutex> lock(mtx_);
+ #ifdef PIN_IK_TESTING
+-      if (test_hook) test_hook(*this, "before_result", 0);
++      if (test_hook) test_hook(*this, "before_result", index);
+ #endif
+       if (unique_solution(q_out))
+       {
+@@ -279,28 +285,6 @@
+         }
+         uint curr_size = solutions.size();
+         errors.resize(curr_size);
+-        double err, penalty, manip_value;
+-        switch (solvetype)
+-        {
+-        case Manip1:
+-          penalty = manipPenalty(q_out);
+-          manip_value = PIN_IK::manipValue1(q_out);
+-          err = penalty * manip_value;
+-          break;
+-        case Manip2:
+-          penalty = manipPenalty(q_out);
+-          manip_value = PIN_IK::manipValue2(q_out);
+-          err = penalty * manip_value;
+-          break;
+-        case Manip3:
+-          penalty = manipPenalty(q_out);
+-          manip_value = PIN_IK::manipValue3(q_out);
+-          err = penalty * manip_value;
+-          break;
+-        default:
+-          err = PIN_IK::JointErr(q_init, q_out);
+-          break;
+-        }
+         errors[curr_size - 1] = std::make_pair(err, curr_size - 1);
+       }
+     }
+@@ -390,39 +374,22 @@
+   return std::max(0.0, 1.0 - exp(-1 * penalty));
+ }
+ 
+-double PIN_IK::manipValue1(const Eigen::VectorXd& arr)
+-{
+-  Eigen::VectorXd singular_values = computeSingularValues(arr);
+-
+-  double error = 1.0;
+-  for (int i = 0; i < singular_values.size(); ++i)
+-    error *= singular_values(i);
+-  return error;
+-}
+-
+-double PIN_IK::manipValue2(const Eigen::VectorXd& arr)
+-{
+-  Eigen::VectorXd singular_values = computeSingularValues(arr);
+-  return singular_values.minCoeff() / singular_values.maxCoeff();
+-}
+-
+-double PIN_IK::manipValue3(const Eigen::VectorXd& arr)
+-{
+-  Eigen::VectorXd singular_values = computeSingularValues(arr);
+-  return singular_values.minCoeff();
+-}
+-
+-Eigen::VectorXd PIN_IK::computeSingularValues(const Eigen::VectorXd& arr)
+-{
+-  pinocchio::Data::Matrix6x J(6, model.nv);
+-  J.setZero();
+-
+-  pinocchio::forwardKinematics(model, *data, ::PIN_IK::toPinocchioConfiguration(model, arr));
+-  pinocchio::computeFrameJacobian(model, *data, ::PIN_IK::toPinocchioConfiguration(model, arr), tip_frame_id,
+-                                   pinocchio::LOCAL_WORLD_ALIGNED, J);
+-
+-  Eigen::JacobiSVD<Eigen::MatrixXd> svdsolver(J);
+-  return svdsolver.singularValues();
++double PIN_IK::scoreSolution(const Eigen::VectorXd& seed, const Eigen::VectorXd& arr, unsigned index)
++{
++  if (solvetype != Manip1 && solvetype != Manip2 && solvetype != Manip3)
++    return JointErr(seed, arr);
++  auto& workspace = *scoring[index];
++  toPinocchioConfiguration(model, arr, workspace.configuration);
++  workspace.jacobian.setZero();
++  pinocchio::forwardKinematics(model, workspace.data, workspace.configuration);
++  pinocchio::computeFrameJacobian(model, workspace.data, workspace.configuration, tip_frame_id,
++                                  pinocchio::LOCAL_WORLD_ALIGNED, workspace.jacobian);
++  workspace.svd.compute(workspace.jacobian);
++  const auto& singular_values = workspace.svd.singularValues();
++  double value = singular_values.minCoeff();
++  if (solvetype == Manip1) value = singular_values.prod();
++  else if (solvetype == Manip2) value /= singular_values.maxCoeff();
++  return manipPenalty(arr) * value;
+ }
+ 
+ int PIN_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,
