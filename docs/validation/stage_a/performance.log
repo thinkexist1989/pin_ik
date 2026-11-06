@@ -1,0 +1,20 @@
+performance_cartesian_smooth_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=14.0085 max_us=610.889 over_1ms=0 max_position_error=6.49688e-07 max_rotation_error=7.2788e-07
+performance_cartesian_smooth_mode0_baseline samples=20000 success=19989 invalid=0 mean_us=57.2214 max_us=2533.27 over_1ms=13 max_position_error=9.13096e-07 max_rotation_error=7.29763e-07
+performance_cartesian_smooth_mode0_kdl samples=20000 success=19993 invalid=0 mean_us=60.1169 max_us=2136.75 over_1ms=6 max_position_error=1.42218e-06 max_rotation_error=1.41286e-06
+  paired stage_a vs baseline: both_solved=19989 max_joint_difference=6.58498084e-07
+  paired stage_a vs kdl: both_solved=19993 max_joint_difference=1.12139297e-06
+performance_cartesian_exact_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=10.9087 max_us=202.678 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_cartesian_exact_mode0_baseline samples=20000 success=19989 invalid=0 mean_us=54.022 max_us=4297.8 over_1ms=11 max_position_error=0 max_rotation_error=0
+performance_cartesian_exact_mode0_kdl samples=20000 success=19994 invalid=0 mean_us=49.6804 max_us=3067.63 over_1ms=7 max_position_error=0 max_rotation_error=0
+  paired stage_a vs baseline: both_solved=19989 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=19994 max_joint_difference=0
+performance_arm6_smooth_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=15.209 max_us=534.588 over_1ms=0 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+performance_arm6_smooth_mode0_baseline samples=20000 success=19989 invalid=0 mean_us=53.1451 max_us=2850.52 over_1ms=10 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+performance_arm6_smooth_mode0_kdl samples=20000 success=19990 invalid=0 mean_us=65.0728 max_us=2350.46 over_1ms=8 max_position_error=1.31348e-06 max_rotation_error=9.46239e-07
+  paired stage_a vs baseline: both_solved=19989 max_joint_difference=0.000136358176
+  paired stage_a vs kdl: both_solved=19990 max_joint_difference=0.0201852732
+performance_arm6_exact_mode0_stage_a samples=20000 success=20000 invalid=0 mean_us=10.7567 max_us=684.926 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_arm6_exact_mode0_baseline samples=20000 success=19992 invalid=0 mean_us=45.3025 max_us=2188.82 over_1ms=6 max_position_error=0 max_rotation_error=0
+performance_arm6_exact_mode0_kdl samples=20000 success=19995 invalid=0 mean_us=45.6173 max_us=2480.93 over_1ms=5 max_position_error=0 max_rotation_error=0
+  paired stage_a vs baseline: both_solved=19992 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=19995 max_joint_difference=0

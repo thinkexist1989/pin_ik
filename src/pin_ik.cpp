@@ -50,6 +50,7 @@ PIN_IK::PIN_IK(const std::string& base, const std::string& tip, const std::strin
   loadURDFModel(xml, base, tip, model, lb, ub, tip_frame_id);
   data.reset(new pinocchio::Data(model));
   initialize();
+  startWorkers();
 }
 
 PIN_IK::PIN_IK(const pinocchio::Model& _model, const Eigen::VectorXd& _q_min,
@@ -66,6 +67,7 @@ PIN_IK::PIN_IK(const pinocchio::Model& _model, const Eigen::VectorXd& _q_min,
 {
   data.reset(new pinocchio::Data(model));
   initialize();
+  startWorkers();
 }
 
 void PIN_IK::initialize()
@@ -85,6 +87,106 @@ void PIN_IK::initialize()
   types = ::PIN_IK::jointTypes(model);
 
   initialized = true;
+}
+
+bool PIN_IK::setLimits(Eigen::VectorXd& lb_, Eigen::VectorXd& ub_)
+{
+  validateLimits(model, lb_, ub_);
+  // Prepare everything before committing; allocation failures preserve the old limits.
+  Eigen::VectorXd new_lb = lb_, new_ub = ub_;
+  auto new_nl = std::make_unique<NLOPT_IK::NLOPT_IK>(
+      model, new_lb, new_ub, tip_frame_id, maxtime, eps, NLOPT_IK::SumSq);
+  auto new_ik = std::make_unique<ChainIkSolverPos_TL>(
+      model, new_lb, new_ub, tip_frame_id, maxtime, eps, true, true);
+  std::lock_guard<std::mutex> lock(worker_mutex);
+  lb.swap(new_lb);
+  ub.swap(new_ub);
+  nl_solver.swap(new_nl);
+  iksolver.swap(new_ik);
+  return true;
+}
+
+#ifdef PIN_IK_TESTING
+void (*PIN_IK::test_hook)(PIN_IK&, const char*, unsigned) = nullptr;
+#endif
+
+void PIN_IK::startWorkers()
+{
+  task_seed.resize(model.nv);
+  try
+  {
+#ifdef PIN_IK_TESTING
+    if (test_hook) test_hook(*this, "before_start", 0);
+#endif
+    task1 = std::thread(&PIN_IK::workerLoop, this, 0);
+#ifdef PIN_IK_TESTING
+    if (test_hook) test_hook(*this, "before_start", 1);
+#endif
+    task2 = std::thread(&PIN_IK::workerLoop, this, 1);
+    std::unique_lock<std::mutex> lock(worker_mutex);
+    state_cv.wait(lock, [this] { return ready_workers == 2; });
+  }
+  catch (...)
+  {
+    // A failed constructor will not invoke ~PIN_IK().
+    stopWorkers();
+    throw;
+  }
+}
+
+void PIN_IK::stopWorkers()
+{
+  {
+    std::lock_guard<std::mutex> lock(worker_mutex);
+    shutdown = true;
+  }
+  work_cv.notify_all();
+  if (task1.joinable()) task1.join();
+  if (task2.joinable()) task2.join();
+}
+
+void PIN_IK::workerLoop(unsigned index)
+{
+  std::uint64_t seen_generation = 0;
+  std::unique_lock<std::mutex> lock(worker_mutex);
+  ++ready_workers;
+  state_cv.notify_one();
+  while (true)
+  {
+    work_cv.wait(lock, [this, &seen_generation] {
+      return shutdown || generation != seen_generation;
+    });
+    if (shutdown) return;
+    seen_generation = generation;
+    lock.unlock();
+
+    std::exception_ptr error;
+    try
+    {
+#ifdef PIN_IK_TESTING
+      if (test_hook) test_hook(*this, "before_solve", index);
+#endif
+      if (index == 0) runPinocchioIK(task_seed, task_pose);
+      else runNLOPT(task_seed, task_pose);
+#ifdef PIN_IK_TESTING
+      if (test_hook) test_hook(*this, "after_solve", index);
+#endif
+    }
+    catch (...)
+    {
+      error = std::current_exception();
+      iksolver->abort();
+      nl_solver->abort();
+    }
+    if (index == 0) iksolver->setMaxtime(maxtime);
+    else nl_solver->setMaxtime(maxtime);
+
+    lock.lock();
+    worker_errors[index] = error;
+    ++completed_workers;
+    state_cv.notify_one();
+    // No task/solver access after completion until the next generation is acquired.
+  }
 }
 
 bool PIN_IK::unique_solution(const Eigen::VectorXd& sol)
@@ -125,7 +227,7 @@ bool PIN_IK::runSolver(T1& solver, T2& other_solver,
   double fulltime = maxtime;
   Eigen::VectorXd seed = q_init;
 
-  while (true)
+  while (!solver.aborted)
   {
     auto timediff = std::chrono::steady_clock::now() - start_time;
     auto time_left = fulltime - std::chrono::duration<double>(timediff).count();
@@ -149,7 +251,10 @@ bool PIN_IK::runSolver(T1& solver, T2& other_solver,
         normalize_seed(q_init, q_out);
         break;
       }
-      mtx_.lock();
+      std::lock_guard<std::mutex> lock(mtx_);
+#ifdef PIN_IK_TESTING
+      if (test_hook) test_hook(*this, "before_result", 0);
+#endif
       if (unique_solution(q_out))
       {
         solutions.push_back(q_out);
@@ -179,7 +284,6 @@ bool PIN_IK::runSolver(T1& solver, T2& other_solver,
         }
         errors[curr_size - 1] = std::make_pair(err, curr_size - 1);
       }
-      mtx_.unlock();
     }
 
     {
@@ -187,6 +291,7 @@ bool PIN_IK::runSolver(T1& solver, T2& other_solver,
       if (!solutions.empty() && solvetype == Speed) break;
     }
 
+    if (solver.aborted) break;
     for (int j = 0; j < seed.size(); j++)
       if (types[j] == Continuous)
         seed(j) = fRand(q_init(j) - 2 * M_PI, q_init(j) + 2 * M_PI);
@@ -319,15 +424,21 @@ int PIN_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,
   solutions.clear();
   errors.clear();
 
-  bounds = _bounds;
-
-  task1 = std::thread(&PIN_IK::runPinocchioIK, this, q_init, p_in);
-  task2 = std::thread(&PIN_IK::runNLOPT, this, q_init, p_in);
-
-  if (task1.joinable())
-      task1.join();
-  if (task2.joinable())
-      task2.join();
+  {
+    std::unique_lock<std::mutex> lock(worker_mutex);
+    bounds = _bounds;
+    task_seed = q_init;
+    task_pose = p_in;
+    worker_errors = {};
+    completed_workers = 0;
+    ++generation;
+    lock.unlock();
+    work_cv.notify_all();
+    lock.lock();
+    state_cv.wait(lock, [this] { return completed_workers == 2; });
+  }
+  for (const auto& error : worker_errors)
+    if (error) std::rethrow_exception(error);
 
   if (solutions.empty())
   {
@@ -354,15 +465,8 @@ int PIN_IK::CartToJnt(const Eigen::VectorXd &q_init, const pinocchio::SE3 &p_in,
 
 PIN_IK::~PIN_IK()
 {
-  if (initialized)
-  {
-    iksolver->abort();
-    nl_solver->abort();
-  }
-  if (task1.joinable())
-    task1.join();
-  if (task2.joinable())
-    task2.join();
+  // The owner must finish any public call before destroying this instance.
+  stopWorkers();
 }
 
 }

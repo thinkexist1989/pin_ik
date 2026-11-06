@@ -1,0 +1,10 @@
+Internal ctest changing into directory: /tmp/pin-ik-stage-a/asan
+Test project /tmp/pin-ik-stage-a/asan
+    Start 1: cpp_standalone
+1/2 Test #1: cpp_standalone ...................   Passed    0.31 sec
+    Start 2: persistent_workers
+2/2 Test #2: persistent_workers ...............   Passed   11.49 sec
+
+100% tests passed, 0 tests failed out of 2
+
+Total Test time (real) =  11.80 sec

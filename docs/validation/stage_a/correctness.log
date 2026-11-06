@@ -1,0 +1,85 @@
+correctness_cartesian_smooth_mode0_stage_a samples=200 success=200 invalid=0 mean_us=18.8163 max_us=63.689 over_1ms=0 max_position_error=1.40997e-09 max_rotation_error=1.94106e-09
+correctness_cartesian_smooth_mode0_baseline samples=200 success=200 invalid=0 mean_us=72.9761 max_us=326.387 over_1ms=0 max_position_error=1.40997e-09 max_rotation_error=1.94106e-09
+correctness_cartesian_smooth_mode0_kdl samples=200 success=200 invalid=0 mean_us=72.5432 max_us=217.367 over_1ms=0 max_position_error=8.60505e-08 max_rotation_error=1.56144e-07
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=1.48457911e-07
+correctness_cartesian_smooth_mode1_stage_a samples=200 success=200 invalid=0 mean_us=20059.8 max_us=20244.2 over_1ms=200 max_position_error=4.77268e-07 max_rotation_error=6.33606e-07
+correctness_cartesian_smooth_mode1_baseline samples=200 success=200 invalid=0 mean_us=20107.8 max_us=20229.9 over_1ms=200 max_position_error=3.96382e-07 max_rotation_error=4.84464e-07
+correctness_cartesian_smooth_mode1_kdl samples=200 success=200 invalid=0 mean_us=20099.3 max_us=20246.6 over_1ms=200 max_position_error=8.32272e-07 max_rotation_error=1.19387e-06
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=4.72672387e-07
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=1.03124675e-06
+correctness_cartesian_smooth_mode2_stage_a samples=200 success=200 invalid=0 mean_us=20082.4 max_us=20286 over_1ms=200 max_position_error=6.00005e-07 max_rotation_error=8.53371e-07
+correctness_cartesian_smooth_mode2_baseline samples=200 success=200 invalid=0 mean_us=20112.3 max_us=20299.4 over_1ms=200 max_position_error=7.08585e-07 max_rotation_error=9.75933e-07
+correctness_cartesian_smooth_mode2_kdl samples=200 success=200 invalid=0 mean_us=20101.6 max_us=20232.8 over_1ms=200 max_position_error=7.67556e-07 max_rotation_error=1.14639e-06
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=8.33674857e-07
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=9.28721875e-07
+correctness_cartesian_smooth_mode3_stage_a samples=200 success=200 invalid=0 mean_us=20062.3 max_us=20153.3 over_1ms=200 max_position_error=2.38084e-07 max_rotation_error=3.31811e-07
+correctness_cartesian_smooth_mode3_baseline samples=200 success=200 invalid=0 mean_us=20105.8 max_us=20253.4 over_1ms=200 max_position_error=3.72799e-07 max_rotation_error=4.40477e-07
+correctness_cartesian_smooth_mode3_kdl samples=200 success=200 invalid=0 mean_us=20107 max_us=20293.6 over_1ms=200 max_position_error=5.29602e-07 max_rotation_error=7.28154e-07
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=3.30995787e-07
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=5.54425167e-07
+correctness_cartesian_smooth_mode4_stage_a samples=200 success=200 invalid=0 mean_us=20072.4 max_us=20184.9 over_1ms=200 max_position_error=6.12589e-07 max_rotation_error=8.75556e-07
+correctness_cartesian_smooth_mode4_baseline samples=200 success=200 invalid=0 mean_us=20099.7 max_us=20267.1 over_1ms=200 max_position_error=6.79228e-07 max_rotation_error=9.92397e-07
+correctness_cartesian_smooth_mode4_kdl samples=200 success=200 invalid=0 mean_us=20090.8 max_us=20290.7 over_1ms=200 max_position_error=7.83157e-07 max_rotation_error=1.17359e-06
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=7.88841497e-07
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=9.53636174e-07
+correctness_cartesian_jump_mode0_stage_a samples=200 success=200 invalid=0 mean_us=21.9451 max_us=166.36 over_1ms=0 max_position_error=3.47685e-09 max_rotation_error=5.65055e-09
+correctness_cartesian_jump_mode0_baseline samples=200 success=200 invalid=0 mean_us=66.8281 max_us=336.633 over_1ms=0 max_position_error=3.47685e-09 max_rotation_error=5.65055e-09
+correctness_cartesian_jump_mode0_kdl samples=200 success=200 invalid=0 mean_us=69.5001 max_us=240.33 over_1ms=0 max_position_error=5.01217e-07 max_rotation_error=4.42813e-07
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=4.45177167e-07
+correctness_cartesian_limits_mode0_stage_a samples=200 success=200 invalid=0 mean_us=21.2885 max_us=38.456 over_1ms=0 max_position_error=1.85017e-09 max_rotation_error=1.42986e-10
+correctness_cartesian_limits_mode0_baseline samples=200 success=200 invalid=0 mean_us=63.3733 max_us=545.399 over_1ms=0 max_position_error=1.85017e-09 max_rotation_error=1.42986e-10
+correctness_cartesian_limits_mode0_kdl samples=200 success=200 invalid=0 mean_us=77.8217 max_us=1191.01 over_1ms=2 max_position_error=4.5892e-07 max_rotation_error=7.81858e-07
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=1.07669955e-06
+correctness_cartesian_unreachable_mode0_stage_a samples=200 success=0 invalid=0 mean_us=20067.8 max_us=20236.9 over_1ms=200 max_position_error=0 max_rotation_error=0
+correctness_cartesian_unreachable_mode0_baseline samples=200 success=0 invalid=0 mean_us=20081.3 max_us=21982.3 over_1ms=200 max_position_error=0 max_rotation_error=0
+correctness_cartesian_unreachable_mode0_kdl samples=200 success=0 invalid=0 mean_us=20089.7 max_us=20827.9 over_1ms=200 max_position_error=0 max_rotation_error=0
+  paired stage_a vs baseline: both_solved=0 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=0 max_joint_difference=0
+correctness_arm6_smooth_mode0_stage_a samples=200 success=200 invalid=0 mean_us=19.3226 max_us=123.915 over_1ms=0 max_position_error=9.96365e-07 max_rotation_error=6.71765e-07
+correctness_arm6_smooth_mode0_baseline samples=200 success=200 invalid=0 mean_us=57.2566 max_us=525.484 over_1ms=0 max_position_error=9.96365e-07 max_rotation_error=6.71765e-07
+correctness_arm6_smooth_mode0_kdl samples=200 success=200 invalid=0 mean_us=70.3594 max_us=133.453 over_1ms=0 max_position_error=8.22263e-09 max_rotation_error=4.73855e-09
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=9.85504359e-05
+correctness_arm6_smooth_mode1_stage_a samples=200 success=200 invalid=0 mean_us=20076.4 max_us=20214.6 over_1ms=200 max_position_error=9.96365e-07 max_rotation_error=6.71765e-07
+correctness_arm6_smooth_mode1_baseline samples=200 success=200 invalid=0 mean_us=20109.2 max_us=20263.9 over_1ms=200 max_position_error=9.96365e-07 max_rotation_error=6.71765e-07
+correctness_arm6_smooth_mode1_kdl samples=200 success=200 invalid=0 mean_us=20112.4 max_us=20260.8 over_1ms=200 max_position_error=1.60508e-06 max_rotation_error=1.02448e-06
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=0.00011723808
+correctness_arm6_smooth_mode2_stage_a samples=200 success=200 invalid=0 mean_us=20096.6 max_us=20280.9 over_1ms=200 max_position_error=9.96365e-07 max_rotation_error=6.71765e-07
+correctness_arm6_smooth_mode2_baseline samples=200 success=200 invalid=0 mean_us=20094 max_us=20250 over_1ms=200 max_position_error=9.96365e-07 max_rotation_error=6.71765e-07
+correctness_arm6_smooth_mode2_kdl samples=200 success=200 invalid=0 mean_us=20091.9 max_us=20252.8 over_1ms=200 max_position_error=1.40133e-06 max_rotation_error=1.04212e-06
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0.000101136353
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=0.152970987
+correctness_arm6_smooth_mode3_stage_a samples=200 success=200 invalid=0 mean_us=20095.9 max_us=20195.5 over_1ms=200 max_position_error=9.93547e-07 max_rotation_error=9.52926e-07
+correctness_arm6_smooth_mode3_baseline samples=200 success=200 invalid=0 mean_us=20074.8 max_us=20208.4 over_1ms=200 max_position_error=9.85025e-07 max_rotation_error=9.54333e-07
+correctness_arm6_smooth_mode3_kdl samples=200 success=200 invalid=0 mean_us=20063.8 max_us=20232.7 over_1ms=200 max_position_error=1.60102e-06 max_rotation_error=1.26443e-06
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=8.37890551e-05
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=0.163628224
+correctness_arm6_smooth_mode4_stage_a samples=200 success=200 invalid=0 mean_us=20075.1 max_us=20273 over_1ms=200 max_position_error=9.96365e-07 max_rotation_error=7.61396e-07
+correctness_arm6_smooth_mode4_baseline samples=200 success=200 invalid=0 mean_us=20090.2 max_us=20289.3 over_1ms=200 max_position_error=9.97979e-07 max_rotation_error=7.08254e-07
+correctness_arm6_smooth_mode4_kdl samples=200 success=200 invalid=0 mean_us=20092.4 max_us=20234.6 over_1ms=200 max_position_error=1.63382e-06 max_rotation_error=1.35963e-06
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0.167365711
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=0.17204367
+correctness_arm6_jump_mode0_stage_a samples=200 success=200 invalid=0 mean_us=20.7451 max_us=190.689 over_1ms=0 max_position_error=9.67013e-07 max_rotation_error=7.2493e-07
+correctness_arm6_jump_mode0_baseline samples=200 success=200 invalid=0 mean_us=58.5257 max_us=220.587 over_1ms=0 max_position_error=9.67013e-07 max_rotation_error=7.2493e-07
+correctness_arm6_jump_mode0_kdl samples=200 success=200 invalid=0 mean_us=54.993 max_us=177.715 over_1ms=0 max_position_error=1.31243e-06 max_rotation_error=1.3196e-06
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=0.000552601693
+correctness_arm6_limits_mode0_stage_a samples=200 success=200 invalid=0 mean_us=22.694 max_us=94.735 over_1ms=0 max_position_error=1.05844e-09 max_rotation_error=1.10024e-08
+correctness_arm6_limits_mode0_baseline samples=200 success=200 invalid=0 mean_us=44.7874 max_us=172.937 over_1ms=0 max_position_error=1.05844e-09 max_rotation_error=1.10024e-08
+correctness_arm6_limits_mode0_kdl samples=200 success=200 invalid=0 mean_us=64.9121 max_us=227.596 over_1ms=0 max_position_error=8.26673e-09 max_rotation_error=6.36287e-08
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=6.32469996e-08
+correctness_arm6_singular_mode0_stage_a samples=200 success=200 invalid=0 mean_us=24.1027 max_us=135.421 over_1ms=0 max_position_error=9.12067e-08 max_rotation_error=4.97169e-07
+correctness_arm6_singular_mode0_baseline samples=200 success=200 invalid=0 mean_us=48.0361 max_us=181.057 over_1ms=0 max_position_error=9.12067e-08 max_rotation_error=4.97169e-07
+correctness_arm6_singular_mode0_kdl samples=200 success=200 invalid=0 mean_us=70.7123 max_us=143.507 over_1ms=0 max_position_error=1.01092e-07 max_rotation_error=5.80009e-07
+  paired stage_a vs baseline: both_solved=200 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=200 max_joint_difference=0.000569246371
+correctness_arm6_unreachable_mode0_stage_a samples=200 success=0 invalid=0 mean_us=20098 max_us=20202.5 over_1ms=200 max_position_error=0 max_rotation_error=0
+correctness_arm6_unreachable_mode0_baseline samples=200 success=0 invalid=0 mean_us=20096.8 max_us=20211.9 over_1ms=200 max_position_error=0 max_rotation_error=0
+correctness_arm6_unreachable_mode0_kdl samples=200 success=0 invalid=0 mean_us=20094.9 max_us=20297.6 over_1ms=200 max_position_error=0 max_rotation_error=0
+  paired stage_a vs baseline: both_solved=0 max_joint_difference=0
+  paired stage_a vs kdl: both_solved=0 max_joint_difference=0

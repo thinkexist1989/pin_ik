@@ -41,6 +41,10 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stdexcept>
 #include <mutex>
 #include <memory>
+#include <condition_variable>
+#include <cstdint>
+#include <exception>
+#include <array>
 
 namespace PIN_IK
 {
@@ -84,15 +88,8 @@ public:
     return getSolutions(solutions_);
   }
 
-  bool setLimits(Eigen::VectorXd& lb_, Eigen::VectorXd& ub_)
-  {
-    validateLimits(model, lb_, ub_);
-    lb = lb_;
-    ub = ub_;
-    types.clear();
-    initialize();
-    return true;
-  }
+  // Configuration changes and queries must not overlap a solve on this instance.
+  bool setLimits(Eigen::VectorXd& lb_, Eigen::VectorXd& ub_);
 
   static double JointErr(const Eigen::VectorXd& arr1, const Eigen::VectorXd& arr2)
   {
@@ -146,7 +143,26 @@ private:
   std::vector<std::pair<double, uint> >  errors;
 
   std::thread task1, task2;
+  std::mutex worker_mutex;
+  std::condition_variable work_cv, state_cv;
+  std::uint64_t generation = 0;
+  unsigned ready_workers = 0;
+  unsigned completed_workers = 0;
+  bool shutdown = false;
+  Eigen::VectorXd task_seed;
+  pinocchio::SE3 task_pose;
+  std::array<std::exception_ptr, 2> worker_errors;
   pinocchio::Motion bounds;
+
+  void startWorkers();
+  void stopWorkers();
+  void workerLoop(unsigned index);
+
+#ifdef PIN_IK_TESTING
+  friend struct WorkerTestAccess;
+  // Only the separately compiled test library contains fault/scheduling hooks.
+  static void (*test_hook)(PIN_IK&, const char*, unsigned);
+#endif
 
   bool unique_solution(const Eigen::VectorXd& sol);
 

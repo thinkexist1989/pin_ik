@@ -1,0 +1,5 @@
+periodic_arm6_smooth_mode0_stage_a samples=10000 success=10000 invalid=0 mean_us=172.116 max_us=797.89 over_1ms=0 max_position_error=9.99774e-07 max_rotation_error=6.7303e-07
+periodic_arm6_smooth_mode0_baseline samples=10000 success=9997 invalid=0 mean_us=283.147 max_us=4597.81 over_1ms=4 max_position_error=9.99774e-07 max_rotation_error=6.7303e-07
+periodic_arm6_smooth_mode0_kdl samples=10000 success=9976 invalid=0 mean_us=348.243 max_us=3587.34 over_1ms=10 max_position_error=1.31348e-06 max_rotation_error=8.16905e-07
+  paired stage_a vs baseline: both_solved=9997 max_joint_difference=0.000154817511
+  paired stage_a vs kdl: both_solved=9976 max_joint_difference=0.0198718618

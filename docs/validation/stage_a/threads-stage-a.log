@@ -1,0 +1,5 @@
+673799 clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x73bbb19ff910, parent_tid=0x73bbb19ff910, exit_signal=0, stack=0x73bbb11ff000, stack_size=0x7ff500, tls=0x73bbb19ff640} => {parent_tid=[673800]}, 88) = 673800
+673799 clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x73bbb11fe910, parent_tid=0x73bbb11fe910, exit_signal=0, stack=0x73bbb09fe000, stack_size=0x7ff500, tls=0x73bbb11fe640} => {parent_tid=[673801]}, 88) = 673801
+673801 +++ exited with 0 +++
+673800 +++ exited with 0 +++
+673799 +++ exited with 0 +++

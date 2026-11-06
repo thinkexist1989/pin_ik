@@ -1,0 +1,4 @@
+200 calls per solver including 100 warmup calls
+Stage A: 2 successful clone calls, 2 worker exits and 1 main exit
+Baseline: 400 successful clone calls, 400 worker exits and 1 main exit
+Tracing results excluded from performance statistics.

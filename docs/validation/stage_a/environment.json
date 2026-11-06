@@ -1,0 +1,56 @@
+{
+  "date": "2026-11-06",
+  "baseline_commit": "553fd1f1fc3bad594af3f4b3214535707f83c58b",
+  "kdl_commit": "4335714751d4d05b405cd15558b383c69a8a3230",
+  "kernel": "6.8.1-1061-realtime",
+  "cpu": "Intel Core i7-1260P",
+  "logical_cpus": 16,
+  "scheduler": "SCHED_OTHER",
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "compiler": "11.4.0",
+  "build_type": "Release",
+  "pinocchio": "3.9.0",
+  "orocos_kdl": "1.5.1",
+  "nlopt_runtime": "2.7.0",
+  "runtime_nlopt_path": "/opt/rocos/app/lib/libnlopt.so.0",
+  "raw_results_directory": "/tmp/pin-ik-stage-a",
+  "source_sha256": {
+    "include/pin_ik/pin_ik.hpp": "cb7aeb8ac7afe92eefd973fe65a9c946b7136f1b3a474dd85b952cd6b0cf9b8d",
+    "src/pin_ik.cpp": "462b03bf8b82ed95fdae18dcba7c8aef1c3caa677caef8fe5e0e2148b3c3178f",
+    "tests/worker_tests.cpp": "d5acd891724e8f4e410db1b2c8f80318d8b7df18f55e4a6a556fceb0f64d778a",
+    "tests/benchmark/ik_benchmark.cpp": "a6955a813b29e230339f936a6d686c2f980cdc3602ce0b5e1184ef64c102004d",
+    "tests/benchmark/compare.py": "743bfef3bb921951f531e840623d177e7fd30c2e3c6cc3415cef2de1c65f68ae"
+  },
+  "binary_sha256": {
+    "release/libpin_ik.so": "76c964583134fad60c5fab6fe1912412e4df378296b657f53012ce95aa787d13",
+    "baseline-build/libpin_ik.so": "94df98d946b94dec44e63486b511003f6d3685bf64eb9f669ab97bf321bf662f",
+    "kdl-build/trac_ik_lib/libtrac_ik.so": "6b71c0838be9a0fed6d41a94ac2be14deafcda9d1b381d86bc40ec2f88f41529",
+    "bench-a/ik_benchmark": "d0d55494431bafd5d38a51df68a14b64ae2f8855f4dffb7a0dc3e094304c6297",
+    "bench-baseline/ik_benchmark": "38b3cf1f535dbd2b29386ef3b8d3fde0e21e5cd22fa69e394f464966477b30e1",
+    "bench-kdl/ik_benchmark": "f5486223321bba4143fca51c0568dd7ee4d045587f575029ef4cf3342b082043"
+  },
+  "thread_trace": {
+    "calls_per_solver_including_warmup": 200,
+    "stage_a_created": 2,
+    "stage_a_worker_exits": 2,
+    "baseline_created": 400,
+    "baseline_worker_exits": 400
+  }
+}

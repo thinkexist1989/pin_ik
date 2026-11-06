@@ -1,6 +1,8 @@
 # 测试
 
 - `standalone_tests.cpp`：C++ 回归测试。
+- `worker_tests.cpp`：常驻线程的任务序号、受控唤醒、启动失败回收、异常恢复、配置更新和 100,000 次混合调用；测试钩子只编译进独立测试库。
+- `benchmark/`：相同工作负载下分别测试 PIN-IK 与 KDL TRAC-IK，校验解并记录完整调用的平均、最大和分位耗时，见 [复现步骤](benchmark/README.md)。
 - `robot.urdf`：测试及随机 IK 示例共用的机器人模型。
 - `manual/`：手动诊断程序，按需构建，见 [使用说明](manual/README.md)。
 - `VALIDATION.md`：历史本地验证记录，当前结果应以实际运行 CTest 为准。

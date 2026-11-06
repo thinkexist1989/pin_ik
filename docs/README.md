@@ -15,6 +15,11 @@
 
 参见 [主 README](../README.md)。CMake 固定要求 Pinocchio 3.9.0，升级或降级依赖后请使用新的构建目录。
 
+## 优化方案
+
+- [1000 Hz 逆运动学优化方案](REALTIME_IK_OPTIMIZATION_PLAN.md)：已批准，涵盖常驻双线程、任务同步、时间预算、计算优化和验收标准。
+- [阶段 A 实现与验证报告](REALTIME_IK_STAGE_A_VALIDATION.md)：常驻线程实现、KDL TRAC-IK 解正确性对比、平均和最大耗时及周期测试结果。
+
 ## 连续旋转关节
 
 C++ 的关节输入、输出、限位长度均为 `model.nv`，每个关节一个标量。连续旋转关节使用弧度，允许多圈角度，限位为 `(-inf, +inf)`，返回靠近 seed 的等价解。
