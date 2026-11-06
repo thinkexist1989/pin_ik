@@ -18,6 +18,40 @@
 #include <sstream>
 #include <thread>
 
+#ifdef BENCH_TIMING
+#include <cstring>
+#include <ctime>
+namespace PIN_IK {
+struct WorkerTestAccess {
+  static void hook(void (*fn)(PIN_IK&, const char*, unsigned)) { PIN_IK::test_hook = fn; }
+};
+}
+using TraceClock = std::chrono::steady_clock;
+struct Trace {
+  TraceClock::time_point dispatch, start[2], finish[2], complete[2];
+  double cpu_start[2]{}, cpu[2]{};
+};
+// One solver per process. Dispatch/completion barriers publish these fields;
+// each worker writes only its own array elements, and the caller reads on return.
+static Trace trace;
+static double threadCPU() {
+  timespec value{};
+  if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &value)) throw std::runtime_error("Thread CPU clock unavailable");
+  return value.tv_sec*1e6 + value.tv_nsec*1e-3;
+}
+static void traceHook(PIN_IK::PIN_IK&, const char* event, unsigned index) {
+  if (!std::strcmp(event,"before_dispatch")) trace.dispatch = TraceClock::now();
+  else if (!std::strcmp(event,"before_solve")) {
+    trace.start[index] = TraceClock::now(); trace.cpu_start[index] = threadCPU();
+  } else if (!std::strcmp(event,"after_solve")) {
+    trace.cpu[index] = threadCPU()-trace.cpu_start[index]; trace.finish[index] = TraceClock::now();
+  } else if (!std::strcmp(event,"completed")) trace.complete[index] = TraceClock::now();
+}
+static double traceUS(TraceClock::time_point end, TraceClock::time_point begin) {
+  return std::chrono::duration<double,std::micro>(end-begin).count();
+}
+#endif
+
 using Pose = Eigen::Isometry3d;
 using Joints = Eigen::Matrix<double, 6, 1>;
 struct Joint {
@@ -159,6 +193,9 @@ int main(int argc, char** argv) {
       throw std::invalid_argument("Unknown scenario");
     Robot robot(argv[6]);
     Solver solver(robot, timeout, mode);
+#ifdef BENCH_TIMING
+    PIN_IK::WorkerTestAccess::hook(traceHook);
+#endif
     std::srand(42);
     seedSolver(solver.solver, 0);
     std::mt19937 rng(42);
@@ -192,6 +229,10 @@ int main(int argc, char** argv) {
     for (int i = 0; i < 100; ++i) solver.solve(cases[i % samples].seed, cases[i % samples].target, output, elapsed);
     struct Row {
       int rc; double us, position, rotation, limit, lateness; Joints q;
+#ifdef BENCH_TIMING
+      Trace timings;
+      double return_wait;
+#endif
     };
     std::vector<Row> rows(samples);
     auto release = std::chrono::steady_clock::now();
@@ -199,6 +240,10 @@ int main(int argc, char** argv) {
       if (period_us) { release += std::chrono::microseconds(period_us); std::this_thread::sleep_until(release); }
       auto& row = rows[i];
       row.rc = solver.solve(cases[i].seed, cases[i].target, row.q, row.us);
+#ifdef BENCH_TIMING
+      row.return_wait = traceUS(TraceClock::now(), std::max(trace.complete[0],trace.complete[1]));
+      row.timings = trace;
+#endif
       row.lateness = period_us ? std::chrono::duration<double, std::micro>(
           std::chrono::steady_clock::now() - release).count() : 0;
     }
@@ -209,6 +254,11 @@ int main(int argc, char** argv) {
     for (int j = 0; j < 6; ++j) csv << ",seed" << j;
     for (int r = 0; r < 3; ++r) for (int c = 0; c < 4; ++c) csv << ",target" << r << c;
     for (int j = 0; j < 6; ++j) csv << ",q" << j;
+#ifdef BENCH_TIMING
+    for (int j = 0; j < 2; ++j)
+      csv << ",dispatch_to_start" << j << ",worker_wall" << j << ",worker_cpu" << j;
+    csv << ",first_finish_to_complete,last_complete_to_sample";
+#endif
     csv << '\n' << std::setprecision(17);
     int success = 0, invalid = 0, over_ms = 0;
     double sum = 0, maximum = 0, max_position = 0, max_rotation = 0;
@@ -232,6 +282,13 @@ int main(int argc, char** argv) {
       for (int j = 0; j < 6; ++j) csv << ',' << cases[i].seed[j];
       for (int r = 0; r < 3; ++r) for (int c = 0; c < 4; ++c) csv << ',' << cases[i].target.matrix()(r,c);
       for (int j = 0; j < 6; ++j) csv << ',' << row.q[j];
+#ifdef BENCH_TIMING
+      const auto& t = row.timings;
+      for (int j = 0; j < 2; ++j)
+        csv << ',' << traceUS(t.start[j],t.dispatch) << ',' << traceUS(t.finish[j],t.start[j]) << ',' << t.cpu[j];
+      csv << ',' << traceUS(std::max(t.complete[0],t.complete[1]),std::min(t.finish[0],t.finish[1]))
+          << ',' << row.return_wait;
+#endif
       csv << '\n';
     }
     std::cout << "samples=" << samples << " success=" << success << " invalid=" << invalid

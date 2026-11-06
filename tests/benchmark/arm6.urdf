@@ -1,0 +1,12 @@
+<!-- Same 6R geometry, limits and tool pose as Robot("arm6") in ik_benchmark.cpp. -->
+<robot name="stage_c_arm6">
+  <link name="base"/><link name="l0"/><link name="l1"/><link name="l2"/>
+  <link name="l3"/><link name="l4"/><link name="l5"/><link name="tip"/>
+  <joint name="j0" type="revolute"><parent link="base"/><child link="l0"/><origin xyz="0 0 0.3"/><axis xyz="0 0 1"/><limit lower="-2.5" upper="2.5" effort="10" velocity="2"/></joint>
+  <joint name="j1" type="revolute"><parent link="l0"/><child link="l1"/><origin xyz="0.1 0 0.1"/><axis xyz="0 1 0"/><limit lower="-2.5" upper="2.5" effort="10" velocity="2"/></joint>
+  <joint name="j2" type="revolute"><parent link="l1"/><child link="l2"/><origin xyz="0.3 0 0"/><axis xyz="0 1 0"/><limit lower="-2.5" upper="2.5" effort="10" velocity="2"/></joint>
+  <joint name="j3" type="revolute"><parent link="l2"/><child link="l3"/><origin xyz="0.2 0 0.1"/><axis xyz="1 0 0"/><limit lower="-2.5" upper="2.5" effort="10" velocity="2"/></joint>
+  <joint name="j4" type="revolute"><parent link="l3"/><child link="l4"/><origin xyz="0.1 0 0"/><axis xyz="0 1 0"/><limit lower="-2.5" upper="2.5" effort="10" velocity="2"/></joint>
+  <joint name="j5" type="revolute"><parent link="l4"/><child link="l5"/><origin xyz="0.08 0 0"/><axis xyz="0 0 1"/><limit lower="-2.5" upper="2.5" effort="10" velocity="2"/></joint>
+  <joint name="tool" type="fixed"><parent link="l5"/><child link="tip"/><origin xyz="0.1 0.02 0.03" rpy="0.1 0.2 0.3"/></joint>
+</robot>

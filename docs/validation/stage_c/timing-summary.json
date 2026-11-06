@@ -1,0 +1,214 @@
+{
+  "b": {
+    "us": {
+      "mean": 78.8660582,
+      "max": 2765.359
+    },
+    "dispatch_to_start0": {
+      "mean": 28.4909892,
+      "max": 2728.554
+    },
+    "dispatch_to_start1": {
+      "mean": 34.0390625,
+      "max": 2115.588
+    },
+    "worker_wall0": {
+      "mean": 16.5535999,
+      "max": 369.761
+    },
+    "worker_wall1": {
+      "mean": 30.8850192,
+      "max": 448.12
+    },
+    "worker_cpu0": {
+      "mean": 15.101416100000064,
+      "max": 366.49400000000605
+    },
+    "worker_cpu1": {
+      "mean": 29.302230099999832,
+      "max": 443.34499999999935
+    },
+    "first_finish_to_complete": {
+      "mean": 21.3825476,
+      "max": 2399.489
+    },
+    "last_complete_to_sample": {
+      "mean": 12.1166647,
+      "max": 999.847
+    },
+    "over_1ms": 8,
+    "slowest": [
+      {
+        "case": "38",
+        "rc": "1",
+        "us": "2765.3589999999999",
+        "dispatch_to_start0": "2728.5540000000001",
+        "dispatch_to_start1": "71.385999999999996",
+        "worker_wall0": "9.8279999999999994",
+        "worker_wall1": "267.613",
+        "worker_cpu0": "7.0180000000000291",
+        "worker_cpu1": "265.71199999999953",
+        "first_finish_to_complete": "2399.489",
+        "last_complete_to_sample": "24.702000000000002"
+      },
+      {
+        "case": "470",
+        "rc": "1",
+        "us": "2169.6219999999998",
+        "dispatch_to_start0": "10.282999999999999",
+        "dispatch_to_start1": "2115.5880000000002",
+        "worker_wall0": "20.379000000000001",
+        "worker_wall1": "4.7800000000000002",
+        "worker_cpu0": "19.488999999997759",
+        "worker_cpu1": "3.3070000000006985",
+        "first_finish_to_complete": "2090.183",
+        "last_complete_to_sample": "47.939"
+      },
+      {
+        "case": "136",
+        "rc": "-3",
+        "us": "2069.8600000000001",
+        "dispatch_to_start0": "2011.671",
+        "dispatch_to_start1": "1013.356",
+        "worker_wall0": "4.101",
+        "worker_wall1": "3.5779999999999998",
+        "worker_cpu0": "2.3569999999999709",
+        "worker_cpu1": "2.4639999999999418",
+        "first_finish_to_complete": "998.96100000000001",
+        "last_complete_to_sample": "52.085999999999999"
+      },
+      {
+        "case": "99",
+        "rc": "1",
+        "us": "1190.673",
+        "dispatch_to_start0": "11.313000000000001",
+        "dispatch_to_start1": "1143.502",
+        "worker_wall0": "16.079000000000001",
+        "worker_wall1": "2.266",
+        "worker_cpu0": "15.543000000000575",
+        "worker_cpu1": "0.91899999999986903",
+        "first_finish_to_complete": "1118.681",
+        "last_complete_to_sample": "44.173000000000002"
+      },
+      {
+        "case": "51",
+        "rc": "1",
+        "us": "1129.6959999999999",
+        "dispatch_to_start0": "16.242999999999999",
+        "dispatch_to_start1": "127.354",
+        "worker_wall0": "31.562999999999999",
+        "worker_wall1": "1.4870000000000001",
+        "worker_cpu0": "29.898999999999887",
+        "worker_cpu1": "0.8569999999999709",
+        "first_finish_to_complete": "81.209000000000003",
+        "last_complete_to_sample": "999.84699999999998"
+      }
+    ]
+  },
+  "c": {
+    "us": {
+      "mean": 56.6941939,
+      "max": 1461.996
+    },
+    "dispatch_to_start0": {
+      "mean": 18.5744864,
+      "max": 1359.885
+    },
+    "dispatch_to_start1": {
+      "mean": 19.3566893,
+      "max": 1438.154
+    },
+    "worker_wall0": {
+      "mean": 17.9690693,
+      "max": 422.57
+    },
+    "worker_wall1": {
+      "mean": 28.3289897,
+      "max": 425.537
+    },
+    "worker_cpu0": {
+      "mean": 16.804032499999934,
+      "max": 421.8099999999977
+    },
+    "worker_cpu1": {
+      "mean": 27.203105100000077,
+      "max": 425.0669999999809
+    },
+    "first_finish_to_complete": {
+      "mean": 12.2764752,
+      "max": 1335.788
+    },
+    "last_complete_to_sample": {
+      "mean": 7.3133414,
+      "max": 391.885
+    },
+    "over_1ms": 3,
+    "slowest": [
+      {
+        "case": "3729",
+        "rc": "1",
+        "us": "1461.9960000000001",
+        "dispatch_to_start0": "72.370000000000005",
+        "dispatch_to_start1": "1438.154",
+        "worker_wall0": "33.225000000000001",
+        "worker_wall1": "2.7789999999999999",
+        "worker_cpu0": "31.404999999998836",
+        "worker_cpu1": "1.6540000000095461",
+        "first_finish_to_complete": "1335.788",
+        "last_complete_to_sample": "20.405999999999999"
+      },
+      {
+        "case": "4307",
+        "rc": "1",
+        "us": "1379.5050000000001",
+        "dispatch_to_start0": "1359.885",
+        "dispatch_to_start1": "17.149999999999999",
+        "worker_wall0": "4.5640000000000001",
+        "worker_wall1": "301.67099999999999",
+        "worker_cpu0": "2.3469999999797437",
+        "worker_cpu1": "300.79799999998068",
+        "first_finish_to_complete": "1045.9590000000001",
+        "last_complete_to_sample": "13.769"
+      },
+      {
+        "case": "3743",
+        "rc": "1",
+        "us": "1276.6500000000001",
+        "dispatch_to_start0": "10.904",
+        "dispatch_to_start1": "1253.9860000000001",
+        "worker_wall0": "17.468",
+        "worker_wall1": "4.2619999999999996",
+        "worker_cpu0": "16.615999999979977",
+        "worker_cpu1": "2.0750000000116415",
+        "first_finish_to_complete": "1230.077",
+        "last_complete_to_sample": "17.231999999999999"
+      },
+      {
+        "case": "4679",
+        "rc": "1",
+        "us": "514.39999999999998",
+        "dispatch_to_start0": "18.524999999999999",
+        "dispatch_to_start1": "475.81700000000001",
+        "worker_wall0": "57.273000000000003",
+        "worker_wall1": "2.5099999999999998",
+        "worker_cpu0": "55.975999999995111",
+        "worker_cpu1": "1.4680000000225846",
+        "first_finish_to_complete": "402.73099999999999",
+        "last_complete_to_sample": "32.558"
+      },
+      {
+        "case": "7026",
+        "rc": "1",
+        "us": "479.45299999999997",
+        "dispatch_to_start0": "468.93400000000003",
+        "dispatch_to_start1": "14.641",
+        "worker_wall0": "2.0499999999999998",
+        "worker_wall1": "209.85599999999999",
+        "worker_cpu0": "1.1450000000186265",
+        "worker_cpu1": "207.61300000001211",
+        "first_finish_to_complete": "246.69399999999999",
+        "last_complete_to_sample": "6.875"
+      }
+    ]
+  }
+}

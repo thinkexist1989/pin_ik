@@ -180,4 +180,21 @@ python3 tests/benchmark/stage_c_compare.py --samples 100 --timeout 0.02 \
 
 短预算改为 `--timeout 0.00055`，使用独立输出目录并重复实验。正式完整调用对比将四个版本的 `ik_benchmark` 传给 `compare.py --suite performance` / `--suite periodic`。构建及 Sanitizer 检查结束后再运行计时，不混入诊断负载。
 
+增加 `--urdf tests/benchmark/arm6.urdf` 可测同一正式基准的 6R 几何、限位和工具坐标，检验多个有效分支下的搜索质量。探针仅对连续关节添加 `8π`，不会向有限位的 6R 关节注入越界输入。此次 6R 宽预算每组 100 次，短预算每组 500 次、两轮，第二轮倒序执行版本。
+
+`stage_c_compare.py` 同时输出 `paired-summary.json`：只在两个相邻版本均成功的相同输入用例上比较质量和 NLopt 评估次数。`Distance` 分数越小越好，`Manip*` 越大越好；评分差在 `1e-12 + 1e-4*max(abs(a),abs(b))` 内视为等效。成功率仍独立报告，不用交集过滤失败率。该质量容差只用于统计分类，不改变求解器容差。
+
+已保存 CSV 时可增加 `--analyze-only` 重新汇总而不运行求解器，仍需提供原有 `--samples`、`--timeout` 和 `--solver` 标签。要按 B → C1 → C2 → C 比较，即使实际运行顺序相反，也按这个顺序提供标签。
+
 `gradient_tests` 默认要求数值梯度通过；`--diagnostic` 仅输出误差供历史基线比较。`tests/benchmark/probes` 可将同一梯度测试编译链接到某个历史版本的测试支持库，通过 `IK_SOURCE_DIR`、`IK_BUILD_DIR` 指定匹配路径。
+
+Linux 下另有 `timing_probe`，参数和输入与 `ik_benchmark` 相同，但链接测试支持库并启用工作线程钩子和 `CLOCK_THREAD_CPUTIME_ID`：
+
+```bash
+cmake --build /tmp/pin-ik-stage-c/bench-c --target timing_probe -j2
+/tmp/pin-ik-stage-c/bench-c/timing_probe /tmp/pin-ik-stage-c/timing-c.csv 10000 0.00055 0 smooth arm6 1000
+```
+
+额外列 `dispatch_to_start0/1` 包含发布、通知、锁交接和调度等待；`worker_wall0/1`、`worker_cpu0/1` 分别是每线程求解区间的墙钟和线程 CPU 时间；`first_finish_to_complete` 是第一个工作线程结束求解至两个线程都登记完成的间隔；`last_complete_to_sample` 是最后完成至调用端取样的间隔，含返回整理及包装器复制。单位均为 µs。这些区间不全互斥，不能直接相加。每线程只写自己的槽，调用端在完成屏障后读取。插桩耗时只用于定位，不能替代生产库性能结果。
+
+本次实际批次脚本保存在 `docs/validation/stage_c/run_*.py`；它们假定前述各版本构建已存在。后台负载脚本用 `finally` 终止并回收六个进程，诊断和正式测量分别运行。

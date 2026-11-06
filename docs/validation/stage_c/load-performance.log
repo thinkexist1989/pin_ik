@@ -1,0 +1,20 @@
+performance_cartesian_smooth_mode0_b samples=20000 success=19999 invalid=0 mean_us=19.0085 max_us=3808.87 over_1ms=8 max_position_error=8.39329e-07 max_rotation_error=9.93166e-07
+performance_cartesian_smooth_mode0_c samples=20000 success=20000 invalid=0 mean_us=19.5474 max_us=329.717 over_1ms=0 max_position_error=8.78976e-07 max_rotation_error=9.10071e-07
+performance_cartesian_smooth_mode0_a samples=20000 success=20000 invalid=0 mean_us=20.7469 max_us=486.825 over_1ms=0 max_position_error=8.2674e-07 max_rotation_error=6.6357e-07
+  paired b vs c: both_solved=19999 max_joint_difference=8.60490675e-07
+  paired b vs a: both_solved=19999 max_joint_difference=8.00224433e-07
+performance_cartesian_exact_mode0_b samples=20000 success=20000 invalid=0 mean_us=11.5924 max_us=439.467 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_cartesian_exact_mode0_c samples=20000 success=20000 invalid=0 mean_us=14.5467 max_us=595.076 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_cartesian_exact_mode0_a samples=20000 success=20000 invalid=0 mean_us=16.0991 max_us=1103.12 over_1ms=1 max_position_error=0 max_rotation_error=0
+  paired b vs c: both_solved=20000 max_joint_difference=0
+  paired b vs a: both_solved=20000 max_joint_difference=0
+performance_arm6_smooth_mode0_b samples=20000 success=19999 invalid=0 mean_us=18.3131 max_us=646.368 over_1ms=0 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+performance_arm6_smooth_mode0_c samples=20000 success=20000 invalid=0 mean_us=20.1541 max_us=404.935 over_1ms=0 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+performance_arm6_smooth_mode0_a samples=20000 success=19998 invalid=0 mean_us=22.0638 max_us=1092.11 over_1ms=1 max_position_error=9.99999e-07 max_rotation_error=6.743e-07
+  paired b vs c: both_solved=19999 max_joint_difference=7.86468499e-05
+  paired b vs a: both_solved=19997 max_joint_difference=2.38891215e-05
+performance_arm6_exact_mode0_b samples=20000 success=20000 invalid=0 mean_us=11.6678 max_us=904.601 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_arm6_exact_mode0_c samples=20000 success=20000 invalid=0 mean_us=13.3708 max_us=591.384 over_1ms=0 max_position_error=0 max_rotation_error=0
+performance_arm6_exact_mode0_a samples=20000 success=20000 invalid=0 mean_us=14.8459 max_us=1947.88 over_1ms=1 max_position_error=0 max_rotation_error=0
+  paired b vs c: both_solved=20000 max_joint_difference=0
+  paired b vs a: both_solved=20000 max_joint_difference=0

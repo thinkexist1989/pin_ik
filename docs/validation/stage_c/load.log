@@ -1,0 +1,6 @@
+Six SCHED_OTHER integer-loop processes started
+18:06:14 START performance
+18:06:26 DONE performance
+18:06:26 START periodic
+18:06:57 DONE periodic
+All six load processes reaped

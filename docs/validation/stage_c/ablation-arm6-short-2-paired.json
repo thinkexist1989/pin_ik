@@ -1,0 +1,374 @@
+[
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "nlopt",
+    "scenario": "near",
+    "mode": 0,
+    "both_solved": 448,
+    "before_mean_evaluations": 23.957589285714285,
+    "after_mean_evaluations": 23.957589285714285
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "nlopt",
+    "scenario": "independent_seed",
+    "mode": 0,
+    "both_solved": 444,
+    "before_mean_evaluations": 29.08108108108108,
+    "after_mean_evaluations": 29.16216216216216
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 0,
+    "both_solved": 500
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 0,
+    "both_solved": 500
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 1,
+    "both_solved": 500,
+    "improved": 10,
+    "worse": 13,
+    "equivalent": 477
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 1,
+    "both_solved": 500,
+    "improved": 5,
+    "worse": 4,
+    "equivalent": 491
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 2,
+    "both_solved": 500,
+    "improved": 26,
+    "worse": 37,
+    "equivalent": 437
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 2,
+    "both_solved": 500,
+    "improved": 37,
+    "worse": 25,
+    "equivalent": 438
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 3,
+    "both_solved": 500,
+    "improved": 33,
+    "worse": 35,
+    "equivalent": 432
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 3,
+    "both_solved": 500,
+    "improved": 36,
+    "worse": 24,
+    "equivalent": 440
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 4,
+    "both_solved": 500,
+    "improved": 45,
+    "worse": 28,
+    "equivalent": 427
+  },
+  {
+    "before": "b",
+    "after": "c1",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 4,
+    "both_solved": 500,
+    "improved": 31,
+    "worse": 31,
+    "equivalent": 438
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "nlopt",
+    "scenario": "near",
+    "mode": 0,
+    "both_solved": 449,
+    "before_mean_evaluations": 24.040089086859687,
+    "after_mean_evaluations": 24.040089086859687
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "nlopt",
+    "scenario": "independent_seed",
+    "mode": 0,
+    "both_solved": 446,
+    "before_mean_evaluations": 29.230941704035875,
+    "after_mean_evaluations": 29.230941704035875
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 0,
+    "both_solved": 500
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 0,
+    "both_solved": 500
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 1,
+    "both_solved": 500,
+    "improved": 2,
+    "worse": 0,
+    "equivalent": 498
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 1,
+    "both_solved": 500,
+    "improved": 1,
+    "worse": 0,
+    "equivalent": 499
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 2,
+    "both_solved": 500,
+    "improved": 3,
+    "worse": 7,
+    "equivalent": 490
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 2,
+    "both_solved": 500,
+    "improved": 6,
+    "worse": 18,
+    "equivalent": 476
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 3,
+    "both_solved": 500,
+    "improved": 5,
+    "worse": 2,
+    "equivalent": 493
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 3,
+    "both_solved": 500,
+    "improved": 7,
+    "worse": 7,
+    "equivalent": 486
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 4,
+    "both_solved": 500,
+    "improved": 3,
+    "worse": 7,
+    "equivalent": 490
+  },
+  {
+    "before": "c1",
+    "after": "c2",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 4,
+    "both_solved": 500,
+    "improved": 10,
+    "worse": 9,
+    "equivalent": 481
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "nlopt",
+    "scenario": "near",
+    "mode": 0,
+    "both_solved": 449,
+    "before_mean_evaluations": 24.040089086859687,
+    "after_mean_evaluations": 22.342984409799556
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "nlopt",
+    "scenario": "independent_seed",
+    "mode": 0,
+    "both_solved": 446,
+    "before_mean_evaluations": 29.230941704035875,
+    "after_mean_evaluations": 29.455156950672645
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 0,
+    "both_solved": 500
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 0,
+    "both_solved": 500
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 1,
+    "both_solved": 500,
+    "improved": 5,
+    "worse": 3,
+    "equivalent": 492
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 1,
+    "both_solved": 500,
+    "improved": 4,
+    "worse": 0,
+    "equivalent": 496
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 2,
+    "both_solved": 500,
+    "improved": 14,
+    "worse": 6,
+    "equivalent": 480
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 2,
+    "both_solved": 500,
+    "improved": 31,
+    "worse": 12,
+    "equivalent": 457
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 3,
+    "both_solved": 500,
+    "improved": 8,
+    "worse": 8,
+    "equivalent": 484
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 3,
+    "both_solved": 500,
+    "improved": 23,
+    "worse": 21,
+    "equivalent": 456
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "near",
+    "mode": 4,
+    "both_solved": 500,
+    "improved": 14,
+    "worse": 8,
+    "equivalent": 478
+  },
+  {
+    "before": "c2",
+    "after": "c",
+    "backend": "dual",
+    "scenario": "independent_seed",
+    "mode": 4,
+    "both_solved": 500,
+    "improved": 27,
+    "worse": 18,
+    "equivalent": 455
+  }
+]

@@ -255,6 +255,8 @@ pinocchio::forwardKinematics(model, data, q);
 
 阶段 C 使用实例内独立的随机引擎，构造时播种。可在空闲时调用 `setRandomSeed(uint64_t)` 重置四条独立随机序列（两个工作线程的外层重启，以及两个底层求解器的重启）；独立 Newton/NLopt 也提供该方法。`setLimits()` 保留随机状态。固定种子使每条序列可复现，线程调度和时间截止仍会影响最终候选，不能保证并行结果逐位一致。`Manip*` 评分使用每线程独立工作区并在结果锁外执行，NLopt 前向差分使用正确分母和双精度扰动步长。升级后需重新编译客户端。
 
+[阶段 C 验证报告](docs/REALTIME_IK_STAGE_C_VALIDATION.md)包含与 B、A、KDL TRAC-IK 的对比。6R 独立 NLopt 的短预算成功率提高，但完整调用没有在所有场景下一致加速；负载下仍可因工作线程晚开始而超过 1 ms。
+
 ## 测试与诊断
 
 自动化测试：

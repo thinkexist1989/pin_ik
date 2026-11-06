@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
     Eigen::VectorXd lo, hi;
     pinocchio::FrameIndex tip;
     PIN_IK::loadURDFModel(xml,"base","tip",model,lo,hi,tip);
+    const auto types = PIN_IK::jointTypes(model);
     pinocchio::Data data(model);
     const int count = std::stoi(argv[3]);
     const double timeout = std::stod(argv[4]);
@@ -45,7 +46,9 @@ int main(int argc, char** argv) {
               desired[j] = random(rng);
               seed[j] = scenario ? random(rng) : desired[j]+(j%2 ? -.01 : .01);
             }
-            desired[5] += 8*M_PI; seed[5] += 8*M_PI;
+            for (int j = 0; j < model.nv; ++j) if (types[j] == PIN_IK::Continuous) {
+              desired[j] += 8*M_PI; seed[j] += 8*M_PI;
+            }
             pinocchio::forwardKinematics(model,data,PIN_IK::toPinocchioConfiguration(model,desired));
             const auto target = pinocchio::updateFramePlacement(model,data,tip);
             seedSolver(nl,0); seedSolver(dual,0);
